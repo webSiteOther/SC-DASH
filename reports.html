@@ -12,11 +12,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    
-    <!-- jsPDF for PDF export -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <style>
         * {
@@ -406,13 +403,26 @@
         }
 
         @media print {
+            body { background: white; margin: 0; padding: 0; }
+            .app-container { display: block; }
             .sidebar, .top-header, .report-tabs, .filter-bar, .btn-export, .btn-print, .menu-toggle, .logout-btn {
                 display: none !important;
             }
-            .main-content { margin-right: 0; padding: 0; }
-            .report-container { display: block !important; }
-        }
-    </style>
+            .main-content {
+                margin: 0 !important;
+                padding: 0 !important;
+                width: 100%;
+            }
+            .report-section {
+                display: none;
+            }
+            .report-section.active {
+                display: block;
+            }
+            .chart-card, .stat-card {
+                break-inside: avoid;
+            }
+        }</style>
 </head>
 <body>
 
@@ -467,7 +477,7 @@
             </div>
 
             <!-- Financial Report -->
-            <div id="financialReport" class="report-container active">
+            <div id="financialReport" class="report-container report-section active">
                 <div class="filter-bar">
                     <div class="filter-group">
                         <label><i class="fas fa-calendar"></i> من تاريخ</label>
@@ -478,7 +488,7 @@
                         <input type="date" id="financialToDate">
                     </div>
                     <button class="btn-filter" id="applyFinancialFilter" style="padding: 10px 20px; background: var(--primary-blue); color: white; border: none; border-radius: 10px;">تطبيق</button>
-                    <button class="btn-export" id="exportFinancialPDF"><i class="fas fa-file-pdf"></i> تصدير PDF</button>
+                    <button class="btn-print" onclick="window.print()"><i class="fas fa-print"></i> طباعة / تصدير PDF</button>
                 </div>
 
                 <div class="stats-grid" id="financialStats"></div>
@@ -495,7 +505,7 @@
             </div>
 
             <!-- Students Report -->
-            <div id="studentsReport" class="report-container">
+            <div id="studentsReport" class="report-container report-section">
                 <div class="filter-bar">
                     <div class="filter-group">
                         <label><i class="fas fa-building"></i> القسم</label>
@@ -507,8 +517,7 @@
                             <option value="4">التصميم</option>
                         </select>
                     </div>
-                    <button class="btn-export" id="exportStudentsPDF"><i class="fas fa-file-pdf"></i> تصدير PDF</button>
-                    <button class="btn-print" id="printStudents"><i class="fas fa-print"></i> طباعة</button>
+                    <button class="btn-print" onclick="window.print()"><i class="fas fa-print"></i> طباعة / تصدير PDF</button>
                 </div>
                 <div class="report-table-container">
                     <table class="report-table" id="studentsReportTable">
@@ -521,7 +530,7 @@
             </div>
 
             <!-- Payments Report -->
-            <div id="paymentsReport" class="report-container">
+            <div id="paymentsReport" class="report-container report-section">
                 <div class="filter-bar">
                     <div class="filter-group">
                         <label><i class="fas fa-calendar"></i> من تاريخ</label>
@@ -532,7 +541,7 @@
                         <input type="date" id="paymentsToDate">
                     </div>
                     <button class="btn-filter" id="applyPaymentsFilter" style="padding: 10px 20px; background: var(--primary-blue); color: white; border: none; border-radius: 10px;">تطبيق</button>
-                    <button class="btn-export" id="exportPaymentsPDF"><i class="fas fa-file-pdf"></i> تصدير PDF</button>
+                    <button class="btn-print" onclick="window.print()"><i class="fas fa-print"></i> طباعة / تصدير PDF</button>
                 </div>
                 <div class="report-table-container">
                     <table class="report-table" id="paymentsReportTable">
@@ -545,7 +554,7 @@
             </div>
 
             <!-- Attendance Report -->
-            <div id="attendanceReport" class="report-container">
+            <div id="attendanceReport" class="report-container report-section">
                 <div class="filter-bar">
                     <div class="filter-group">
                         <label><i class="fas fa-chalkboard-user"></i> المدرب</label>
@@ -558,7 +567,7 @@
                         <input type="week" id="attendanceWeek">
                     </div>
                     <button class="btn-filter" id="applyAttendanceFilter" style="padding: 10px 20px; background: var(--primary-blue); color: white; border: none; border-radius: 10px;">تطبيق</button>
-                    <button class="btn-export" id="exportAttendancePDF"><i class="fas fa-file-pdf"></i> تصدير PDF</button>
+                    <button class="btn-print" onclick="window.print()"><i class="fas fa-print"></i> طباعة / تصدير PDF</button>
                 </div>
                 <div class="report-table-container">
                     <table class="report-table" id="attendanceTable">
@@ -569,7 +578,7 @@
             </div>
 
             <!-- Overdue Report -->
-            <div id="overdueReport" class="report-container">
+            <div id="overdueReport" class="report-container report-section">
                 <div class="filter-bar">
                     <div class="filter-group">
                         <label><i class="fas fa-building"></i> القسم</label>
@@ -581,8 +590,7 @@
                             <option value="4">التصميم</option>
                         </select>
                     </div>
-                    <button class="btn-export" id="exportOverduePDF"><i class="fas fa-file-pdf"></i> تصدير PDF</button>
-                    <button class="btn-print" id="printOverdue"><i class="fas fa-print"></i> طباعة</button>
+                    <button class="btn-print" onclick="window.print()"><i class="fas fa-print"></i> طباعة / تصدير PDF</button>
                 </div>
                 <div class="stats-grid" id="overdueStats"></div>
                 <div class="report-table-container">
@@ -611,7 +619,7 @@
 
     document.addEventListener('DOMContentLoaded', function() {
         const userStr = sessionStorage.getItem('loggedInUser');
-        if (!userStr) { window.location.href = window.location.href.split('?')[0]; return; }
+        if (!userStr) { window.location.href = 'index.html'; return; }
         currentUser = JSON.parse(userStr);
         updateUserUI();
         setupEventListeners();
@@ -639,13 +647,13 @@
 
     function setupEventListeners() {
         document.getElementById('menuToggle').addEventListener('click', () => document.getElementById('sidebar').classList.toggle('open'));
-        document.getElementById('logoutBtn').addEventListener('click', () => { sessionStorage.removeItem('loggedInUser'); window.location.href = window.location.href.split('?')[0]; });
+        document.getElementById('logoutBtn').addEventListener('click', () => { sessionStorage.removeItem('loggedInUser'); window.location.href = 'index.html'; });
         
         document.querySelectorAll('.nav-link').forEach(link => {
             link.addEventListener('click', function(e) {
                 e.preventDefault();
                 const page = this.dataset.page;
-                if (page) window.location.href = window.location.href.split('?')[0] + '?page=' + page;
+                if (page) window.location.href = page + '.html';
             });
         });
         
@@ -674,16 +682,7 @@
         document.getElementById('studentDeptFilter').addEventListener('change', () => refreshStudentsReport());
         document.getElementById('overdueDeptFilter').addEventListener('change', () => refreshOverdueReport());
         
-        // Export buttons
-        document.getElementById('exportFinancialPDF').addEventListener('click', () => exportToPDF('financialReport', 'التقرير_المالي'));
-        document.getElementById('exportPaymentsPDF').addEventListener('click', () => exportToPDF('paymentsReport', 'تقرير_المدفوعات'));
-        document.getElementById('exportStudentsPDF').addEventListener('click', () => exportToPDF('studentsReport', 'تقرير_الطلاب'));
-        document.getElementById('exportAttendancePDF').addEventListener('click', () => exportToPDF('attendanceReport', 'تقرير_الحضور'));
-        document.getElementById('exportOverduePDF').addEventListener('click', () => exportToPDF('overdueReport', 'تقرير_المتأخرات'));
-        
-        // Print buttons
-        document.getElementById('printStudents').addEventListener('click', () => window.print());
-        document.getElementById('printOverdue').addEventListener('click', () => window.print());
+        // Printing is now handled natively via window.print() on the buttons
     }
 
     async function loadData() {
@@ -691,28 +690,28 @@
         try {
             const studentsResponse = await fetch(SCRIPT_URL, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                 body: JSON.stringify({ action: 'getAllStudents' })
             });
             allStudents = await studentsResponse.json();
             
             const paymentsResponse = await fetch(SCRIPT_URL, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                 body: JSON.stringify({ action: 'getAllPayments' })
             });
             allPayments = await paymentsResponse.json();
             
             const trainersResponse = await fetch(SCRIPT_URL, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                 body: JSON.stringify({ action: 'getAllTrainers' })
             });
             allTrainers = await trainersResponse.json();
             
             const bookingsResponse = await fetch(SCRIPT_URL, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                 body: JSON.stringify({ action: 'getAllBookings' })
             });
             allBookings = await bookingsResponse.json();
