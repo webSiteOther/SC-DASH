@@ -433,6 +433,37 @@
         }
         @keyframes spin { to { transform: rotate(360deg); } }
 
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .toast {
+            padding: 14px 24px;
+            border-radius: 14px;
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: toastIn 0.3s ease, toastOut 0.3s ease 3.7s forwards;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            max-width: 400px;
+            font-family: inherit;
+        }
+        .toast-success { background: linear-gradient(135deg, #2ecc71, #27ae60); }
+        .toast-error { background: linear-gradient(135deg, #e74c3c, #c0392b); }
+        .toast-warning { background: linear-gradient(135deg, #f39c12, #e67e22); }
+        .toast-info { background: linear-gradient(135deg, #3498db, #2980b9); }
+        @keyframes toastIn { from { opacity: 0; transform: translateX(-30px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes toastOut { from { opacity: 1; } to { opacity: 0; transform: translateX(-30px); } }
+
         /* Conflict indicator */
         .conflict {
             background: #fdecea;
@@ -456,6 +487,7 @@
     </style>
 </head>
 <body>
+<div class="toast-container" id="toastContainer"></div>
 
 <div class="loading-overlay" id="loadingOverlay">
     <div class="loading-spinner"></div>
@@ -475,12 +507,48 @@
             <div class="user-role" id="userRole"></div>
         </div>
         <ul class="nav-menu">
-            <li class="nav-item"><a href="#" class="nav-link" data-page="dashboard"><i class="fas fa-tachometer-alt"></i><span>الرئيسية</span></a></li>
-            <li class="nav-item"><a href="#" class="nav-link" data-page="students"><i class="fas fa-users"></i><span>الطلاب</span></a></li>
-            <li class="nav-item"><a href="#" class="nav-link" data-page="trainers"><i class="fas fa-chalkboard-user"></i><span>المدربين</span></a></li>
-            <li class="nav-item"><a href="#" class="nav-link active" data-page="schedule"><i class="fas fa-calendar-alt"></i><span>الجدول</span></a></li>
-            <li class="nav-item"><a href="#" class="nav-link" data-page="payments"><i class="fas fa-money-bill-wave"></i><span>المدفوعات</span></a></li>
-            <li class="nav-item"><a href="#" class="nav-link" data-page="reports"><i class="fas fa-chart-line"></i><span>التقارير</span></a></li>
+            <li class="nav-item">
+                <a href="dashboard.html" class="nav-link">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>الرئيسية</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="students.html" class="nav-link">
+                    <i class="fas fa-users"></i>
+                    <span>الطلاب</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="trainers.html" class="nav-link">
+                    <i class="fas fa-chalkboard-user"></i>
+                    <span>المدربين</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="schedule.html" class="nav-link active">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span>الجدول</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="payments.html" class="nav-link">
+                    <i class="fas fa-money-bill-wave"></i>
+                    <span>المدفوعات</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="reports.html" class="nav-link">
+                    <i class="fas fa-chart-line"></i>
+                    <span>التقارير</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="settings.html" class="nav-link">
+                    <i class="fas fa-cog"></i>
+                    <span>الإعدادات</span>
+                </a>
+            </li>
         </ul>
     </aside>
 
@@ -612,6 +680,77 @@
     let currentView = 'weekly';
     let calendar = null;
     
+    // Toast Notification
+    function showToast(message, type = 'info') {
+        const container = document.getElementById('toastContainer');
+        const icons = { success: 'fa-check-circle', error: 'fa-exclamation-circle', warning: 'fa-exclamation-triangle', info: 'fa-info-circle' };
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.innerHTML = `<i class="fas ${icons[type] || icons.info}"></i><span>${message}</span>`;
+        container.appendChild(toast);
+        setTimeout(() => toast.remove(), 4000);
+    }
+
+    // Centralized API Call
+    async function apiCall(action, data = {}) {
+        try {
+            const response = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({ action, ...data })
+            });
+            const result = await response.json();
+            if (result.success === false) {
+                throw new Error(result.message || 'حدث خطأ غير معروف');
+            }
+            return result.data !== undefined ? result.data : result;
+        } catch (error) {
+            if (error.message && !error.message.includes('fetch')) {
+                showToast(error.message, 'error');
+            } else {
+                showToast('حدث خطأ في الاتصال بالخادم', 'error');
+            }
+            throw error;
+        }
+    }
+
+    // Form Validation
+    const Validators = {
+        required: (val) => val !== null && val !== undefined && String(val).trim() !== '',
+    };
+
+    function validateForm(rules) {
+        let isValid = true;
+        for (const [fieldId, checks] of Object.entries(rules)) {
+            const el = document.getElementById(fieldId);
+            if (!el) continue;
+            const val = el.value;
+            let fieldValid = true;
+            for (const check of checks) {
+                if (!check.fn(val)) {
+                    fieldValid = false;
+                    el.style.borderColor = 'var(--danger)';
+                    let errEl = el.parentElement.querySelector('.field-error');
+                    if (!errEl) {
+                        errEl = document.createElement('div');
+                        errEl.className = 'field-error';
+                        errEl.style.cssText = 'color: var(--danger); font-size: 11px; margin-top: 4px;';
+                        el.parentElement.appendChild(errEl);
+                    }
+                    errEl.textContent = check.msg;
+                    isValid = false;
+                    break;
+                }
+            }
+            if (fieldValid) {
+                el.style.borderColor = '#e9ecef';
+                const errEl = el.parentElement.querySelector('.field-error');
+                if (errEl) errEl.remove();
+            }
+        }
+        return isValid;
+    }
+
     const daysOfWeek = ['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'];
     const daysNames = { Saturday: 'السبت', Sunday: 'الأحد', Monday: 'الاثنين', Tuesday: 'الثلاثاء', Wednesday: 'الأربعاء', Thursday: 'الخميس' };
     const timeSlots = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00'];
@@ -619,7 +758,15 @@
     document.addEventListener('DOMContentLoaded', function() {
         const userStr = sessionStorage.getItem('loggedInUser');
         if (!userStr) { window.location.href = 'index.html'; return; }
-        currentUser = JSON.parse(userStr);
+        
+        try {
+            currentUser = JSON.parse(userStr);
+        } catch(e) {
+            sessionStorage.removeItem('loggedInUser');
+            window.location.href = 'index.html';
+            return;
+        }
+        
         updateUserUI();
         setupEventListeners();
         loadData();
@@ -641,14 +788,6 @@
         document.getElementById('menuToggle').addEventListener('click', () => document.getElementById('sidebar').classList.toggle('open'));
         document.getElementById('logoutBtn').addEventListener('click', () => { sessionStorage.removeItem('loggedInUser'); window.location.href = 'index.html'; });
         
-        document.querySelectorAll('.nav-link').forEach(link => {
-            link.addEventListener('click', function(e) {
-                e.preventDefault();
-                const page = this.dataset.page;
-                if (page) window.location.href = page + '.html';
-            });
-        });
-        
         document.getElementById('weeklyViewBtn').addEventListener('click', () => switchView('weekly'));
         document.getElementById('monthlyViewBtn').addEventListener('click', () => switchView('monthly'));
         document.getElementById('applyFilterBtn').addEventListener('click', () => renderCurrentView());
@@ -664,78 +803,18 @@
     async function loadData() {
         showLoading(true);
         try {
-            const bookingsResponse = await fetch(SCRIPT_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body: JSON.stringify({ action: 'getAllBookings' })
-            });
-            allBookings = await bookingsResponse.json();
-            
-            const hallsResponse = await fetch(SCRIPT_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body: JSON.stringify({ action: 'getAllHalls' })
-            });
-            allHalls = await hallsResponse.json();
-            
-            const trainersResponse = await fetch(SCRIPT_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body: JSON.stringify({ action: 'getAllTrainers' })
-            });
-            allTrainers = await trainersResponse.json();
-            
-            const groupsResponse = await fetch(SCRIPT_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body: JSON.stringify({ action: 'getAllGroups' })
-            });
-            allGroups = await groupsResponse.json();
-            
-            if (!allHalls || allHalls.length === 0) loadDemoHalls();
-            if (!allTrainers || allTrainers.length === 0) loadDemoTrainers();
-            if (!allBookings || allBookings.length === 0) loadDemoBookings();
+            allBookings = await apiCall('getAllBookings');
+            allHalls = await apiCall('getAllHalls');
+            allTrainers = await apiCall('getAllTrainers');
+            allGroups = await apiCall('getAllGroups');
             
             updateFilters();
             renderCurrentView();
-        } catch(e) { console.error(e); loadDemoData(); }
+        } catch(e) { 
+            console.error(e); 
+            // Error handled in apiCall
+        }
         showLoading(false);
-    }
-
-    function loadDemoHalls() {
-        allHalls = [
-            {id: 1, name: "Hall A (Theory)", floorNumber: 1, type: "theory", capacity: 30},
-            {id: 2, name: "Hall B (Practical)", floorNumber: 1, type: "practical", capacity: 20},
-            {id: 3, name: "Hall C (Theory)", floorNumber: 2, type: "theory", capacity: 35},
-            {id: 4, name: "Lab 1", floorNumber: 2, type: "practical", capacity: 15},
-        ];
-    }
-
-    function loadDemoTrainers() {
-        allTrainers = [
-            {id: 1, name: "د. محمد فتحي", deptId: 1, specialization: "Web Development"},
-            {id: 2, name: "م. علي زكي", deptId: 1, specialization: "Python"},
-            {id: 3, name: "أ. هند صبري", deptId: 2, specialization: "English"},
-            {id: 4, name: "د. نور كامل", deptId: 3, specialization: "Project Management"},
-        ];
-    }
-
-    function loadDemoBookings() {
-        allBookings = [
-            {id: 1, hallId: 1, trainerId: 1, groupId: 1, day: "Sunday", startTime: "10:00", endTime: "12:00", conflict: "OK"},
-            {id: 2, hallId: 2, trainerId: 2, groupId: 2, day: "Sunday", startTime: "13:00", endTime: "15:00", conflict: "OK"},
-            {id: 3, hallId: 3, trainerId: 3, groupId: 3, day: "Monday", startTime: "11:00", endTime: "13:00", conflict: "OK"},
-            {id: 4, hallId: 1, trainerId: 4, groupId: 4, day: "Tuesday", startTime: "09:00", endTime: "11:00", conflict: "OK"},
-            {id: 5, hallId: 4, trainerId: 1, groupId: 1, day: "Wednesday", startTime: "14:00", endTime: "16:00", conflict: "OK"},
-        ];
-    }
-
-    function loadDemoData() {
-        loadDemoHalls();
-        loadDemoTrainers();
-        loadDemoBookings();
-        updateFilters();
-        renderCurrentView();
     }
 
     function updateFilters() {
@@ -916,34 +995,36 @@
     }
 
     async function saveBooking() {
+        const rules = {
+            bookingDay: [{ fn: Validators.required, msg: 'اليوم مطلوب' }],
+            startTime: [{ fn: Validators.required, msg: 'وقت البدء مطلوب' }],
+            endTime: [{ fn: Validators.required, msg: 'وقت الانتهاء مطلوب' }],
+            hallId: [{ fn: Validators.required, msg: 'القاعة مطلوبة' }],
+            trainerId: [{ fn: Validators.required, msg: 'المدرب مطلوب' }]
+        };
+        
+        if (!validateForm(rules)) return;
+        
         const bookingData = {
             id: document.getElementById('bookingId').value || null,
             day: document.getElementById('bookingDay').value,
             startTime: document.getElementById('startTime').value,
             endTime: document.getElementById('endTime').value,
-            hallId: parseInt(document.getElementById('hallId').value),
-            trainerId: parseInt(document.getElementById('trainerId').value),
-            groupId: document.getElementById('groupId').value ? parseInt(document.getElementById('groupId').value) : null,
+            hallId: parseInt(document.getElementById('hallId').value, 10) || 0,
+            trainerId: parseInt(document.getElementById('trainerId').value, 10) || 0,
+            groupId: document.getElementById('groupId').value ? parseInt(document.getElementById('groupId').value, 10) : null,
             createdBy: currentUser.id
         };
         
-        if (!bookingData.day || !bookingData.startTime || !bookingData.endTime || !bookingData.hallId || !bookingData.trainerId) {
-            alert('الرجاء ملء جميع الحقول المطلوبة');
-            return;
-        }
-        
         showLoading(true);
         try {
-            const response = await fetch(SCRIPT_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body: JSON.stringify({ action: 'saveBooking', data: bookingData })
-            });
-            const result = await response.json();
+            await apiCall('saveBooking', bookingData);
+            showToast('تم حفظ الحجز بنجاح', 'success');
             closeModal();
             loadData();
-            alert(result.message);
-        } catch(e) { alert('حدث خطأ: ' + e); }
+        } catch(e) { 
+            // Error handled in apiCall
+        }
         showLoading(false);
     }
 
@@ -953,16 +1034,13 @@
         if (confirm('هل أنت متأكد من حذف هذا الحجز؟')) {
             showLoading(true);
             try {
-                const response = await fetch(SCRIPT_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify({ action: 'deleteBooking', id: id })
-                });
-                const result = await response.json();
+                await apiCall('deleteBooking', { bookingId: id });
+                showToast('تم حذف الحجز بنجاح', 'success');
                 closeModal();
                 loadData();
-                alert(result.message);
-            } catch(e) { alert('حدث خطأ: ' + e); }
+            } catch(e) { 
+                // Error handled in apiCall
+            }
             showLoading(false);
         }
     }
