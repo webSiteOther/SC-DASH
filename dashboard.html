@@ -797,7 +797,7 @@
             // Fetch financial summary
             const summaryResponse = await fetch(SCRIPT_URL, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                 body: JSON.stringify({ action: 'getFinancialSummary' })
             });
             const summary = await summaryResponse.json();
@@ -806,7 +806,7 @@
             // Fetch recent payments
             const paymentsResponse = await fetch(SCRIPT_URL, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                 body: JSON.stringify({ action: 'getAllPayments' })
             });
             const payments = await paymentsResponse.json();
@@ -815,7 +815,7 @@
             // Fetch students for department chart
             const studentsResponse = await fetch(SCRIPT_URL, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                 body: JSON.stringify({ action: 'getAllStudents' })
             });
             const students = await studentsResponse.json();
