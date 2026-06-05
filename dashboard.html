@@ -789,39 +789,43 @@
     }
     
     async function loadDashboardData() {
-        showLoading(true);
+    showLoading(true);
+    
+    try {
+        // Fetch financial summary
+        const summaryResponse = await fetch('https://script.google.com/macros/s/AKfycbxOlbPXo97sbdQA9tny8aRZpx64jxNzZ4_NcHwmXVFnyw_7giNmavJcWaf84oW5KCDgpQ/exec', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'getFinancialSummary' })
+        });
+        const summary = await summaryResponse.json();
+        updateStats(summary);
         
-        try {
-            // Fetch financial summary
-            const summary = await google.script.run.withSuccessHandler(function(result) {
-                updateStats(result);
-            }).withFailureHandler(function(error) {
-                console.error('Error loading summary:', error);
-                showDemoData();
-            }).getFinancialSummary();
-            
-            // Fetch recent payments
-            const payments = await google.script.run.withSuccessHandler(function(result) {
-                updateRecentPayments(result);
-            }).withFailureHandler(function(error) {
-                console.error('Error loading payments:', error);
-            }).getAllPayments();
-            
-            // Fetch students for department chart
-            const students = await google.script.run.withSuccessHandler(function(result) {
-                updateDepartmentChart(result);
-            }).withFailureHandler(function(error) {
-                console.error('Error loading students:', error);
-                updateDepartmentChartDemo();
-            }).getAllStudents();
-            
-        } catch (error) {
-            console.error('Error:', error);
-            showDemoData();
-        }
+        // Fetch recent payments
+        const paymentsResponse = await fetch('https://script.google.com/macros/s/AKfycbxOlbPXo97sbdQA9tny8aRZpx64jxNzZ4_NcHwmXVFnyw_7giNmavJcWaf84oW5KCDgpQ/exec', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'getAllPayments' })
+        });
+        const payments = await paymentsResponse.json();
+        updateRecentPayments(payments);
         
-        showLoading(false);
+        // Fetch students for department chart
+        const studentsResponse = await fetch('https://script.google.com/macros/s/AKfycbxOlbPXo97sbdQA9tny8aRZpx64jxNzZ4_NcHwmXVFnyw_7giNmavJcWaf84oW5KCDgpQ/exec', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'getAllStudents' })
+        });
+        const students = await studentsResponse.json();
+        updateDepartmentChart(students);
+        
+    } catch (error) {
+        console.error('Error:', error);
+        showDemoData();
     }
+    
+    showLoading(false);
+}
     
     function updateStats(data) {
         document.getElementById('totalStudents').textContent = data.studentCount || 0;
@@ -975,7 +979,6 @@
 </script>
 
 <!-- Google Apps Script API -->
-<script src="https://script.google.com/macros/s/AKfycbwu74ENNNJlrC8dhCc1k-e3wgp138KVTUF3I1A9MsnOidXqDuGxeIhydaASD3fw9KepsA/exec"></script>
 
 </body>
 </html>
