@@ -13,7 +13,43 @@
     
     <!-- Chart.js -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js">
+    function exportToExcel(btnElement) {
+        // Find the closest report container and then the table
+        const container = btnElement.closest('.report-container');
+        const table = container.querySelector('table');
+        if (!table) return;
+
+        let csv = '\uFEFF'; // Add BOM for Excel Arabic support
+        const rows = table.querySelectorAll('tr');
+        
+        for (let i = 0; i < rows.length; i++) {
+            const row = [], cols = rows[i].querySelectorAll('td, th');
+            for (let j = 0; j < cols.length; j++) {
+                // Get text and escape quotes
+                let data = cols[j].innerText.replace(/"/g, '""');
+                row.push('"' + data + '"');
+            }
+            csv += row.join(',') + '\n';
+        }
+        
+        // Download
+        const tabName = document.querySelector('.tab-btn.active').innerText.trim() || 'تقرير';
+        const filename = tabName + '_' + new Date().toLocaleDateString('ar-EG') + '.csv';
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        if (link.download !== undefined) {
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    }
+</script>
+
     
     <style>
         * {
@@ -556,6 +592,7 @@
                         <input type="date" id="financialToDate">
                     </div>
                     <button class="btn-filter" id="applyFinancialFilter" style="padding: 10px 20px; background: var(--primary-blue); color: white; border: none; border-radius: 10px;">تطبيق</button>
+                    <button class="btn-export" onclick="exportToExcel(this)"><i class="fas fa-file-excel"></i> تصدير Excel</button>
                     <button class="btn-print" onclick="window.print()"><i class="fas fa-print"></i> طباعة / تصدير PDF</button>
                 </div>
 
@@ -585,6 +622,7 @@
                             <option value="4">التصميم</option>
                         </select>
                     </div>
+                    <button class="btn-export" onclick="exportToExcel(this)"><i class="fas fa-file-excel"></i> تصدير Excel</button>
                     <button class="btn-print" onclick="window.print()"><i class="fas fa-print"></i> طباعة / تصدير PDF</button>
                 </div>
                 <div class="report-table-container">
@@ -609,6 +647,7 @@
                         <input type="date" id="paymentsToDate">
                     </div>
                     <button class="btn-filter" id="applyPaymentsFilter" style="padding: 10px 20px; background: var(--primary-blue); color: white; border: none; border-radius: 10px;">تطبيق</button>
+                    <button class="btn-export" onclick="exportToExcel(this)"><i class="fas fa-file-excel"></i> تصدير Excel</button>
                     <button class="btn-print" onclick="window.print()"><i class="fas fa-print"></i> طباعة / تصدير PDF</button>
                 </div>
                 <div class="report-table-container">
@@ -635,6 +674,7 @@
                         <input type="week" id="attendanceWeek">
                     </div>
                     <button class="btn-filter" id="applyAttendanceFilter" style="padding: 10px 20px; background: var(--primary-blue); color: white; border: none; border-radius: 10px;">تطبيق</button>
+                    <button class="btn-export" onclick="exportToExcel(this)"><i class="fas fa-file-excel"></i> تصدير Excel</button>
                     <button class="btn-print" onclick="window.print()"><i class="fas fa-print"></i> طباعة / تصدير PDF</button>
                 </div>
                 <div class="report-table-container">
@@ -658,6 +698,7 @@
                             <option value="4">التصميم</option>
                         </select>
                     </div>
+                    <button class="btn-export" onclick="exportToExcel(this)"><i class="fas fa-file-excel"></i> تصدير Excel</button>
                     <button class="btn-print" onclick="window.print()"><i class="fas fa-print"></i> طباعة / تصدير PDF</button>
                 </div>
                 <div class="stats-grid" id="overdueStats"></div>
@@ -987,6 +1028,79 @@
         const overlay = document.getElementById('loadingOverlay');
         if (show) overlay.classList.add('show');
         else overlay.classList.remove('show');
+    }
+
+    function exportToExcel(btnElement) {
+        // Find the closest report container and then the table
+        const container = btnElement.closest('.report-container');
+        const table = container.querySelector('table');
+        if (!table) return;
+
+        let csv = '\uFEFF'; // Add BOM for Excel Arabic support
+        const rows = table.querySelectorAll('tr');
+        
+        for (let i = 0; i < rows.length; i++) {
+            const row = [], cols = rows[i].querySelectorAll('td, th');
+            for (let j = 0; j < cols.length; j++) {
+                // Get text and escape quotes
+                let data = cols[j].innerText.replace(/"/g, '""');
+                row.push('"' + data + '"');
+            }
+            csv += row.join(',') + '\n';
+        }
+        
+        // Download
+        const tabName = document.querySelector('.tab-btn.active').innerText.trim() || 'تقرير';
+        const filename = tabName + '_' + new Date().toLocaleDateString('ar-EG') + '.csv';
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        if (link.download !== undefined) {
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    }
+</script>
+
+
+<script src="sidebar.js">
+    function exportToExcel(btnElement) {
+        // Find the closest report container and then the table
+        const container = btnElement.closest('.report-container');
+        const table = container.querySelector('table');
+        if (!table) return;
+
+        let csv = '\uFEFF'; // Add BOM for Excel Arabic support
+        const rows = table.querySelectorAll('tr');
+        
+        for (let i = 0; i < rows.length; i++) {
+            const row = [], cols = rows[i].querySelectorAll('td, th');
+            for (let j = 0; j < cols.length; j++) {
+                // Get text and escape quotes
+                let data = cols[j].innerText.replace(/"/g, '""');
+                row.push('"' + data + '"');
+            }
+            csv += row.join(',') + '\n';
+        }
+        
+        // Download
+        const tabName = document.querySelector('.tab-btn.active').innerText.trim() || 'تقرير';
+        const filename = tabName + '_' + new Date().toLocaleDateString('ar-EG') + '.csv';
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        if (link.download !== undefined) {
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
     }
 </script>
 
