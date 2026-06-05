@@ -346,9 +346,41 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .toast {
+            padding: 14px 24px;
+            border-radius: 14px;
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: toastIn 0.3s ease, toastOut 0.3s ease 3.7s forwards;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            max-width: 400px;
+            font-family: inherit;
+        }
+        .toast-success { background: linear-gradient(135deg, #2ecc71, #27ae60); }
+        .toast-error { background: linear-gradient(135deg, #e74c3c, #c0392b); }
+        .toast-warning { background: linear-gradient(135deg, #f39c12, #e67e22); }
+        .toast-info { background: linear-gradient(135deg, #3498db, #2980b9); }
+        @keyframes toastIn { from { opacity: 0; transform: translateX(-30px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes toastOut { from { opacity: 1; } to { opacity: 0; transform: translateX(-30px); } }
     </style>
 </head>
 <body>
+    <div class="toast-container" id="toastContainer"></div>
 
     <div class="shape shape-1"></div>
     <div class="shape shape-2"></div>
@@ -455,7 +487,7 @@
             const errorDiv = document.getElementById('errorMessage');
             
             if (!username || !password) {
-                showError('الرجاء إدخال اسم المستخدم وكلمة المرور');
+                showToast('الرجاء إدخال اسم المستخدم وكلمة المرور', 'warning');
                 return;
             }
             
@@ -477,12 +509,12 @@
                         window.location.href = 'dashboard.html';
                     }, 800);
                 } else {
-                    showError(result.message || 'اسم المستخدم أو كلمة المرور غير صحيحة');
+                    showToast(result.message || 'اسم المستخدم أو كلمة المرور غير صحيحة', 'error');
                     resetLoginButton();
                 }
             } catch (error) {
                 console.error('Error:', error);
-                showError('حدث خطأ في الاتصال بالخادم. تأكدي من نشر الـ Web App بشكل صحيح');
+                showToast('حدث خطأ في الاتصال بالخادم. تأكدي من نشر الـ Web App بشكل صحيح', 'error');
                 resetLoginButton();
             }
             
@@ -491,12 +523,14 @@
                 loading.classList.remove('show');
             }
             
-            function showError(message) {
-                document.getElementById('errorText').textContent = message;
-                errorDiv.classList.add('show');
-                setTimeout(() => {
-                    errorDiv.classList.remove('show');
-                }, 4000);
+            function showToast(message, type = 'info') {
+                const container = document.getElementById('toastContainer');
+                const icons = { success: 'fa-check-circle', error: 'fa-exclamation-circle', warning: 'fa-exclamation-triangle', info: 'fa-info-circle' };
+                const toast = document.createElement('div');
+                toast.className = `toast toast-${type}`;
+                toast.innerHTML = `<i class="fas ${icons[type] || icons.info}"></i><span>${message}</span>`;
+                container.appendChild(toast);
+                setTimeout(() => toast.remove(), 4000);
             }
         });
         
