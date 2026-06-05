@@ -657,9 +657,17 @@
                     <label>إجمالي رسوم المستوى (ج.م)</label>
                     <input type="number" id="totalLevelFee" placeholder="مثلاً: 500">
                 </div>
+                <div class="form-group" style="background: #f8f9fa; padding: 10px; border-radius: 8px;">
+                    <label style="margin-bottom: 10px;">نوع الدفع</label>
+                    <div style="display: flex; gap: 20px;">
+                        <label style="font-weight: normal; cursor: pointer;"><input type="radio" name="paymentType" value="full" checked onchange="togglePaymentType()"> دفع كلي (كامل الرسوم)</label>
+                        <label style="font-weight: normal; cursor: pointer;"><input type="radio" name="paymentType" value="partial" onchange="togglePaymentType()"> دفع جزئي (قسط)</label>
+                    </div>
+                </div>
                 <div class="form-group">
                     <label>المبلغ المدفوع (ج.م)</label>
-                    <input type="number" id="amountPaid" placeholder="أدخل المبلغ">
+                    <input type="number" id="amountPaid" placeholder="أدخل المبلغ" readonly style="background: #e9ecef;">
+                    <small id="remainingAmount" style="color: var(--danger); font-weight: bold; display: none; margin-top: 5px;">المتبقي: 0 ج.م</small>
                 </div>
                 <div class="form-group">
                     <label>تاريخ الدفع</label>
@@ -685,7 +693,7 @@
 
     document.addEventListener('DOMContentLoaded', function() {
         const userStr = sessionStorage.getItem('loggedInUser');
-        if (!userStr) { window.location.href = window.location.href.split('?')[0]; return; }
+        if (!userStr) { window.location.href = 'index.html'; return; }
         currentUser = JSON.parse(userStr);
         updateUserUI();
         setupEventListeners();
@@ -700,7 +708,7 @@
 
     function setupEventListeners() {
         document.getElementById('menuToggle').addEventListener('click', () => document.getElementById('sidebar').classList.toggle('open'));
-        document.getElementById('logoutBtn').addEventListener('click', () => { sessionStorage.removeItem('loggedInUser'); window.location.href = window.location.href.split('?')[0]; });
+        document.getElementById('logoutBtn').addEventListener('click', () => { sessionStorage.removeItem('loggedInUser'); window.location.href = 'index.html'; });
         
         document.querySelectorAll('.nav-link').forEach(link => {
             link.addEventListener('click', function(e) {
@@ -953,6 +961,46 @@
     window.selectStudent = selectStudent;
     window.viewPayment = viewPayment;
     window.deletePayment = deletePayment;
+    
+    window.togglePaymentType = function() {
+        const type = document.querySelector('input[name="paymentType"]:checked').value;
+        const totalInput = document.getElementById('totalLevelFee');
+        const paidInput = document.getElementById('amountPaid');
+        const remainingLabel = document.getElementById('remainingAmount');
+        
+        if (type === 'full') {
+            paidInput.value = totalInput.value || '';
+            paidInput.readOnly = true;
+            paidInput.style.background = '#e9ecef';
+            remainingLabel.style.display = 'none';
+        } else {
+            paidInput.readOnly = false;
+            paidInput.style.background = '#fff';
+            paidInput.value = '';
+            remainingLabel.style.display = 'block';
+            updateRemaining();
+        }
+    };
+    
+    function updateRemaining() {
+        const total = parseFloat(document.getElementById('totalLevelFee').value) || 0;
+        const paid = parseFloat(document.getElementById('amountPaid').value) || 0;
+        const remaining = total - paid;
+        const type = document.querySelector('input[name="paymentType"]:checked').value;
+        if (type === 'partial') {
+            const label = document.getElementById('remainingAmount');
+            label.textContent = `المتبقي: ${remaining > 0 ? remaining : 0} ج.م`;
+            label.style.display = 'block';
+        }
+    }
+    
+    // Auto update when total fee changes
+    document.getElementById('totalLevelFee').addEventListener('input', () => {
+        togglePaymentType();
+    });
+    
+    document.getElementById('amountPaid').addEventListener('input', updateRemaining);
+
 </script>
 
 </body>
