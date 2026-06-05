@@ -730,7 +730,7 @@
         // Check login status
         const userStr = sessionStorage.getItem('loggedInUser');
         if (!userStr) {
-            window.location.href = window.location.href.split('?')[0];
+            window.location.href = 'index.html';
             return;
         }
         
@@ -759,7 +759,7 @@
         // Logout
         document.getElementById('logoutBtn').addEventListener('click', function() {
             sessionStorage.removeItem('loggedInUser');
-            window.location.href = window.location.href.split('?')[0];
+            window.location.href = 'index.html';
         });
         
         // Navigation links
