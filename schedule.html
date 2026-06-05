@@ -835,6 +835,12 @@
         return allFloors.filter(f => allowedIds.includes(f.id));
     }
 
+    
+    const timeSlots = [];
+    for (let i = 9; i <= 22; i++) {
+        timeSlots.push(`${i.toString().padStart(2, '0')}:00`);
+    }
+
     function renderBoard() {
         const hallFilter = document.getElementById('hallFilter').value;
         const trainerFilter = document.getElementById('trainerFilter').value;
@@ -853,84 +859,82 @@
         const header = document.getElementById('boardHeader');
         const body = document.getElementById('boardBody');
         
-        // Render Header (Days)
+        // Render Header (Time Slots)
         let headerHtml = `<tr>
-            <th style="padding: 15px; background: var(--dark-blue); color: white; border: 1px solid #dee2e6; width: 120px; position: sticky; right: 0; z-index: 10;">الدور / القاعات</th>
+            <th style="padding: 15px; background: var(--dark-blue); color: white; border: 1px solid #dee2e6; width: 120px; position: sticky; right: 0; z-index: 10;">اليوم / المواعيد</th>
         `;
-        for (let day of daysOfWeek) {
-            headerHtml += `<th style="padding: 15px; background: var(--dark-blue); color: white; border: 1px solid #dee2e6; text-align: center; min-width: 250px;">${daysNames[day]}</th>`;
+        for (let time of timeSlots) {
+            headerHtml += `<th style="padding: 10px; background: var(--dark-blue); color: white; border: 1px solid #dee2e6; text-align: center; min-width: 150px;">${time}</th>`;
         }
         headerHtml += `</tr>`;
         header.innerHTML = headerHtml;
         
-        // Render Body (Floors)
+        // Define floor colors
+        const floorColors = ['#e3f2fd', '#fce4ec', '#e8f5e9', '#fff3e0', '#f3e5f5'];
+        const floorBorderColors = ['#2196f3', '#e91e63', '#4caf50', '#ff9800', '#9c27b0'];
+        
+        // Render Body (Days)
         let bodyHtml = '';
-        if (visibleFloors.length === 0) {
-            bodyHtml = `<tr><td colspan="8" style="text-align: center; padding: 50px; color: var(--gray);">ليس لديك صلاحية لرؤية أي قاعات أو أدوار.</td></tr>`;
-        } else {
-            for (let floor of visibleFloors) {
-                let rowHtml = `<tr>
-                    <td style="padding: 15px; background: #f8f9fa; border: 1px solid #dee2e6; font-weight: bold; text-align: center; position: sticky; right: 0; z-index: 9; box-shadow: -2px 0 5px rgba(0,0,0,0.02);">
-                        <div style="font-size: 16px; color: var(--primary-blue);">${floor.name}</div>
-                    </td>
-                `;
+        for (let day of daysOfWeek) {
+            let rowHtml = `<tr>
+                <td style="padding: 15px; background: #f8f9fa; border: 1px solid #dee2e6; font-weight: bold; text-align: center; position: sticky; right: 0; z-index: 9; box-shadow: -2px 0 5px rgba(0,0,0,0.02);">
+                    <div style="font-size: 16px; color: var(--primary-blue);">${daysNames[day]}</div>
+                    <button onclick="openAddModalAtDay('${day}')" style="margin-top: 10px; background: transparent; border: 1px dashed #ccc; color: var(--gray); padding: 5px; width: 100%; border-radius: 8px; cursor: pointer; transition: all 0.2s; font-size: 11px;">
+                        <i class="fas fa-plus"></i> إضافة
+                    </button>
+                </td>
+            `;
+            
+            for (let time of timeSlots) {
+                let cellContent = '';
                 
-                for (let day of daysOfWeek) {
-                    // Get all bookings for this floor and this day
-                    let dayBookings = filteredBookings.filter(b => {
+                // For this [Day, Time], group by Floor
+                for (let i = 0; i < visibleFloors.length; i++) {
+                    let floor = visibleFloors[i];
+                    let floorColor = floorColors[i % floorColors.length];
+                    let borderColor = floorBorderColors[i % floorBorderColors.length];
+                    
+                    let floorBookings = filteredBookings.filter(b => {
                         const hall = allHalls.find(h => h.id == b.hallId);
-                        return b.day === day && hall && hall.floorNumber == floor.id;
+                        // Simple time overlap check
+                        return b.day === day && hall && hall.floorNumber == floor.id && (b.startTime <= time && b.endTime > time);
                     });
                     
-                    // Sort bookings by start time
-                    dayBookings.sort((a, b) => a.startTime.localeCompare(b.startTime));
-                    
-                    let cellContent = '';
-                    if (dayBookings.length > 0) {
-                        cellContent = `<div style="display: flex; flex-direction: column; gap: 10px;">`;
-                        for (let booking of dayBookings) {
+                    if (floorBookings.length > 0) {
+                        cellContent += `<div style="background: ${floorColor}; border-right: 4px solid ${borderColor}; padding: 6px; margin-bottom: 6px; border-radius: 6px; font-size: 11px; color: var(--dark);">`;
+                        cellContent += `<div style="font-weight: bold; margin-bottom: 4px; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 2px;">${floor.name}</div>`;
+                        
+                        for (let booking of floorBookings) {
                             const trainer = allTrainers.find(t => t.id === booking.trainerId);
                             const hall = allHalls.find(h => h.id === booking.hallId);
-                            const group = allGroups.find(g => g.id === booking.groupId);
                             const isConflict = booking.conflict === 'CONFLICT';
-                            
-                            const cardStyle = isConflict 
-                                ? "background: #fff5f5; border-right: 4px solid var(--danger); padding: 12px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); cursor: pointer; transition: transform 0.2s;"
-                                : "background: #f8faff; border-right: 4px solid var(--primary-blue); padding: 12px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); cursor: pointer; transition: transform 0.2s;";
+                            const conflictAlert = isConflict ? `<i class="fas fa-exclamation-triangle" style="color: var(--danger);" title="تعارض"></i> ` : '';
                             
                             cellContent += `
-                                <div style="${cardStyle}" onclick="editBooking(${booking.id})" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
-                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                                        <span style="font-size: 14px; font-weight: bold; color: ${isConflict ? 'var(--danger)' : 'var(--dark-blue)'};"><i class="far fa-clock"></i> ${booking.startTime} - ${booking.endTime}</span>
-                                        <span style="font-size: 12px; background: ${isConflict ? '#fee2e2' : '#e0e7ff'}; color: ${isConflict ? '#991b1b' : '#3730a3'}; padding: 3px 8px; border-radius: 12px; font-weight: bold;">${hall?.name || 'قاعة غير محددة'}</span>
-                                    </div>
-                                    <div style="font-size: 13px; color: var(--dark); margin-bottom: 4px;"><i class="fas fa-chalkboard-user" style="color: var(--gray); width: 16px;"></i> المدرب: <strong>${trainer?.name || 'غير محدد'}</strong></div>
-                                    <div style="font-size: 13px; color: var(--dark);"><i class="fas fa-users" style="color: var(--gray); width: 16px;"></i> الجروب: <strong>${group?.name || 'بدون جروب'}</strong></div>
+                                <div onclick="editBooking(${booking.id})" style="cursor: pointer; background: rgba(255,255,255,0.7); padding: 4px; margin-top: 4px; border-radius: 4px; transition: transform 0.1s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                                    <div style="font-weight: bold;">${conflictAlert}${booking.startTime} - ${booking.endTime}</div>
+                                    <div><i class="fas fa-door-open"></i> ${hall?.name || '-'}</div>
+                                    <div><i class="fas fa-user-tie"></i> ${trainer?.name || '-'}</div>
                                 </div>
                             `;
                         }
                         cellContent += `</div>`;
                     }
-                    
-                    // Add an "Add" button at the bottom of the cell
-                    cellContent += `
-                        <div style="margin-top: 15px; text-align: center;">
-                            <button onclick="openAddModalAtSlot('${day}', '${floor.id}')" style="background: transparent; border: 1px dashed #ccc; color: var(--gray); padding: 8px; width: 100%; border-radius: 8px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#f8f9fa'; this.style.borderColor='var(--primary-blue)'; this.style.color='var(--primary-blue)';" onmouseout="this.style.background='transparent'; this.style.borderColor='#ccc'; this.style.color='var(--gray)';">
-                                <i class="fas fa-plus"></i> إضافة حجز
-                            </button>
-                        </div>
-                    `;
-                    
-                    rowHtml += `<td style="padding: 15px; border: 1px solid #dee2e6; vertical-align: top; background: white;">${cellContent}</td>`;
                 }
-                rowHtml += `</tr>`;
-                bodyHtml += rowHtml;
+                
+                rowHtml += `<td style="padding: 10px; border: 1px solid #dee2e6; vertical-align: top; background: white; min-height: 100px;">${cellContent}</td>`;
             }
+            rowHtml += `</tr>`;
+            bodyHtml += rowHtml;
         }
         body.innerHTML = bodyHtml;
     }
-
-    function openAddModal() {
+    
+    function openAddModalAtDay(day) {
+        openAddModal();
+        document.getElementById('bookingDay').value = day;
+    }
+function openAddModal() {
         document.getElementById('modalTitle').textContent = 'حجز جديد';
         document.getElementById('bookingForm').reset();
         document.getElementById('bookingId').value = '';
