@@ -795,7 +795,7 @@
                     </thead>
                     <tbody id="studentsTableBody">
                         <tr>
-                            <td colspan="9" style="text-align: center;">جاري التحميل...</td>
+                            <td colspan="9" style="text-align: center;">جاري التحميل...<\/td>
                         </tr>
                     </tbody>
                 </table>
@@ -865,6 +865,9 @@
 </div>
 
 <script>
+    // الرابط الجديد لـ Google Apps Script
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxOlbPXo97sbdQA9tny8aRZpx64jxNzZ4_NcHwmXVFnyw_7giNmavJcWaf84oW5KCDgpQ/exec';
+    
     let currentUser = null;
     let allStudents = [];
     let departments = [];
@@ -945,19 +948,20 @@
         
         try {
             // Load students
-            allStudents = await google.script.run.withSuccessHandler(function(result) {
-                return result;
-            }).withFailureHandler(function(error) {
-                console.error('Error loading students:', error);
-                return [];
-            }).getAllStudents();
+            const studentsResponse = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'getAllStudents' })
+            });
+            allStudents = await studentsResponse.json();
             
             // Load groups for filter
-            groups = await google.script.run.withSuccessHandler(function(result) {
-                return result;
-            }).withFailureHandler(function(error) {
-                return [];
-            }).getAllGroups();
+            const groupsResponse = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'getAllGroups' })
+            });
+            groups = await groupsResponse.json();
             
             updateGroupFilters();
             filterAndRender();
@@ -1042,7 +1046,7 @@
         const tbody = document.getElementById('studentsTableBody');
         
         if (!students || students.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="9" style="text-align: center;">لا توجد طلاب</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="9" style="text-align: center;">لا توجد طلاب<\/td></tr>';
             document.getElementById('pagination').innerHTML = '';
             return;
         }
@@ -1060,19 +1064,19 @@
             
             return `
                 <tr>
-                    <td><strong>${s.code || '-'}</strong></td>
-                    <td>${s.name || '-'}</td>
-                    <td>${s.phone || '-'}</td>
-                    <td>${s.school || '-'}</td>
-                    <td>${s.age || '-'}</td>
-                    <td>${deptName}</td>
-                    <td>${groupName}</td>
-                    <td>${createdDate}</td>
+                    <td><strong>${s.code || '-'}<\/strong></td>
+                    <td>${s.name || '-'}<\/td>
+                    <td>${s.phone || '-'}<\/td>
+                    <td>${s.school || '-'}<\/td>
+                    <td>${s.age || '-'}<\/td>
+                    <td>${deptName}<\/td>
+                    <td>${groupName}<\/td>
+                    <td>${createdDate}<\/td>
                     <td class="action-buttons">
                         <button class="btn-icon btn-view" onclick="viewStudent(${s.id})"><i class="fas fa-eye"></i></button>
                         <button class="btn-icon btn-edit" onclick="editStudent(${s.id})"><i class="fas fa-edit"></i></button>
                         <button class="btn-icon btn-delete" onclick="deleteStudent(${s.id})"><i class="fas fa-trash"></i></button>
-                    </td>
+                    <\/td>
                 </tr>
             `;
         }).join('');
@@ -1152,13 +1156,15 @@
         showLoading(true);
         
         try {
-            const result = await google.script.run.withSuccessHandler(function(res) {
-                closeModal();
-                loadData();
-                alert(res.message);
-            }).withFailureHandler(function(error) {
-                alert('حدث خطأ: ' + error.message);
-            }).saveStudent(studentData);
+            const response = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'saveStudent', data: studentData })
+            });
+            const result = await response.json();
+            closeModal();
+            loadData();
+            alert(result.message);
         } catch (error) {
             alert('حدث خطأ: ' + error);
         }
@@ -1170,12 +1176,14 @@
         if (confirm('هل أنت متأكد من حذف هذا الطالب؟')) {
             showLoading(true);
             try {
-                const result = await google.script.run.withSuccessHandler(function(res) {
-                    loadData();
-                    alert(res.message);
-                }).withFailureHandler(function(error) {
-                    alert('حدث خطأ: ' + error.message);
-                }).deleteStudent(id);
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'deleteStudent', id: id })
+                });
+                const result = await response.json();
+                loadData();
+                alert(result.message);
             } catch (error) {
                 alert('حدث خطأ: ' + error);
             }
@@ -1195,9 +1203,6 @@
     window.deleteStudent = deleteStudent;
     window.goToPage = goToPage;
 </script>
-
-<!-- Google Apps Script API -->
-<script src="https://script.google.com/macros/s/AKfycbwu74ENNNJlrC8dhCc1k-e3wgp138KVTUF3I1A9MsnOidXqDuGxeIhydaASD3fw9KepsA/exec"></script>
 
 </body>
 </html>
