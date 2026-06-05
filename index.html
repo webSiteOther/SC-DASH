@@ -461,14 +461,14 @@
     </div>
 
     <script>
+        // الرابط الجديد لـ Google Apps Script
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxOlbPXo97sbdQA9tny8aRZpx64jxNzZ4_NcHwmXVFnyw_7giNmavJcWaf84oW5KCDgpQ/exec';
+
         // Fill credentials function for demo cards
         function fillCredentials(username, password) {
             document.getElementById('username').value = username;
             document.getElementById('password').value = password;
             document.getElementById('username').focus();
-            
-            // Optional: auto-submit (comment if not wanted)
-            // document.getElementById('loginForm').dispatchEvent(new Event('submit'));
         }
 
         // Handle login form submission
@@ -493,24 +493,25 @@
             errorDiv.classList.remove('show');
             
             try {
-                // Call Google Apps Script function
-                const response = await fetch('https://script.google.com/macros/s/AKfycbxOlbPXo97sbdQA9tny8aRZpx64jxNzZ4_NcHwmXVFnyw_7giNmavJcWaf84oW5KCDgpQ/exec', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'verifyLogin', username: username, password: password })
-});
-const result = await response.json();
-handleLoginResponse(result);
+                // Call the Google Apps Script using fetch() بدلاً من google.script.run
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'verifyLogin',
+                        username: username,
+                        password: password
+                    })
+                });
                 
-                // Note: The actual response handling happens in withSuccessHandler
-                // If the function returns directly (synchronous), handle it here
-                if (result && typeof result === 'object') {
-                    handleLoginResponse(result);
-                }
+                const result = await response.json();
+                handleLoginResponse(result);
                 
             } catch (error) {
                 console.error('Error:', error);
-                showError('حدث خطأ غير متوقع. الرجاء المحاولة مرة أخرى.');
+                showError('حدث خطأ في الاتصال. الرجاء المحاولة مرة أخرى.');
                 resetLoginButton();
             }
             
@@ -521,7 +522,7 @@ handleLoginResponse(result);
                     // Store user data in session storage
                     sessionStorage.setItem('loggedInUser', JSON.stringify(response.user));
                     
-                    // Redirect to dashboard
+                    // Show success and redirect
                     showSuccessAndRedirect(response.user);
                 } else {
                     showError(response.message || 'اسم المستخدم أو كلمة المرور غير صحيحة');
@@ -548,10 +549,7 @@ handleLoginResponse(result);
                 loginBtn.style.background = 'linear-gradient(135deg, #2ecc71, #27ae60)';
                 
                 setTimeout(() => {
-                    // Redirect based on role (you can customize)
-                    window.location.href = '#dashboard';
-                    // For Web App, you can use google.script.url or just show dashboard
-                    // Since this is a Web App, we'll redirect to the same URL with a parameter
+                    // Redirect to dashboard
                     const currentUrl = window.location.href.split('?')[0];
                     window.location.href = currentUrl + '?page=dashboard';
                 }, 800);
@@ -560,8 +558,6 @@ handleLoginResponse(result);
         
         // Auto-focus on username field
         document.getElementById('username').focus();
-        
-        // Enter key support is already handled by form submit
     </script>
 </body>
 </html>
