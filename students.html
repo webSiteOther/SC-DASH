@@ -914,8 +914,7 @@
                 e.preventDefault();
                 const page = this.dataset.page;
                 if (page) {
-                    const currentUrl = window.location.href.split('?')[0];
-                    window.location.href = currentUrl + '?page=' + page;
+                    window.location.href = page + '.html';
                 }
             });
         });
@@ -950,7 +949,7 @@
             // Load students
             const studentsResponse = await fetch(SCRIPT_URL, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                 body: JSON.stringify({ action: 'getAllStudents' })
             });
             allStudents = await studentsResponse.json();
@@ -958,7 +957,7 @@
             // Load groups for filter
             const groupsResponse = await fetch(SCRIPT_URL, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                 body: JSON.stringify({ action: 'getAllGroups' })
             });
             groups = await groupsResponse.json();
@@ -1158,7 +1157,7 @@
         try {
             const response = await fetch(SCRIPT_URL, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                 body: JSON.stringify({ action: 'saveStudent', data: studentData })
             });
             const result = await response.json();
@@ -1178,7 +1177,7 @@
             try {
                 const response = await fetch(SCRIPT_URL, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                     body: JSON.stringify({ action: 'deleteStudent', id: id })
                 });
                 const result = await response.json();
