@@ -777,23 +777,27 @@
         </header>
 
         <div class="content-area">
+            <!-- Tabs -->
+            <div class="report-tabs" style="display: flex; gap: 10px; margin-bottom: 20px; background: white; padding: 10px; border-radius: 16px;">
+                <button class="tab-btn active" id="tabCourses" style="padding: 10px 20px; border: none; background: var(--primary-blue); color: white; border-radius: 10px; cursor: pointer; font-weight: bold;"><i class="fas fa-book"></i> الكورسات</button>
+                <button class="tab-btn" id="tabAddOns" style="padding: 10px 20px; border: none; background: transparent; color: var(--dark); border-radius: 10px; cursor: pointer; font-weight: bold;"><i class="fas fa-plus-circle"></i> الإضافات (AddOns)</button>
+            </div>
+
             <!-- Toolbar -->
             <div class="toolbar">
                 <div class="search-box">
-                    <input type="text" id="searchInput" placeholder="بحث بالاسم، الكود، أو رقم الهاتف...">
+                    <input type="text" id="searchInput" placeholder="بحث...">
                     <button id="searchBtn"><i class="fas fa-search"></i> بحث</button>
                 </div>
-                <button class="btn-add" id="addCourseBtn">
+                <button class="btn-add" id="addBtn">
                     <i class="fas fa-plus"></i>
-                    <span>إضافة كورس جديد</span>
+                    <span id="addBtnText">إضافة كورس جديد</span>
                 </button>
             </div>
 
-            <!-- Filters removed for Users -->
-
-            <!-- users Table -->
-            <div class="courses-table-container">
-                <table class="courses-table">
+            <!-- Courses Table -->
+            <div class="users-table-container" id="coursesSection">
+                <table class="users-table">
                     <thead>
                         <tr>
                             <th>ID</th>
@@ -805,9 +809,25 @@
                         </tr>
                     </thead>
                     <tbody id="coursesTableBody">
+                        <tr><td colspan="6" style="text-align: center;">جاري التحميل...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- AddOns Table -->
+            <div class="users-table-container" id="addonsSection" style="display: none;">
+                <table class="users-table">
+                    <thead>
                         <tr>
-                            <td colspan="6" style="text-align: center;">جاري التحميل...</td>
+                            <th>ID</th>
+                            <th>اسم الإضافة</th>
+                            <th>سعر الإضافة (ج.م)</th>
+                            <th>الكورس المرتبط</th>
+                            <th>الإجراءات</th>
                         </tr>
+                    </thead>
+                    <tbody id="addonsTableBody">
+                        <tr><td colspan="5" style="text-align: center;">جاري التحميل...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -817,17 +837,16 @@
         </div>
     </main>
 </div>
-
-<!-- Add/Edit user Modal -->
+<!-- Course Modal -->
 <div class="modal" id="courseModal">
     <div class="modal-content">
         <div class="modal-header">
-            <h3 id="modalTitle">إضافة كورس جديد</h3>
-            <button class="close-modal" id="closeModal">&times;</button>
+            <h3 id="courseModalTitle">إضافة كورس جديد</h3>
+            <button class="close-modal" id="closeCourseModal">&times;</button>
         </div>
         <div class="modal-body">
             <form id="courseForm">
-                <input type="hidden" id="userId" value="">
+                <input type="hidden" id="courseId" value="">
                 <div class="form-row">
                     <div class="form-group">
                         <label>اسم الكورس *</label>
@@ -851,33 +870,66 @@
             </form>
         </div>
         <div class="modal-footer">
-            <button class="btn-cancel" id="cancelModal">إلغاء</button>
-            <button class="btn-save" id="saveCourse">حفظ</button>
+            <button class="btn-cancel" id="cancelCourseModal">إلغاء</button>
+            <button class="btn-save" id="saveCourseBtn">حفظ</button>
         </div>
     </div>
 </div>
 
+<!-- AddOn Modal -->
+<div class="modal" id="addonModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="addonModalTitle">إضافة ملحق/إضافة جديدة</h3>
+            <button class="close-modal" id="closeAddonModal">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="addonForm">
+                <input type="hidden" id="addonId" value="">
+                <div class="form-group">
+                    <label>اسم الإضافة (مثال: مذكرات، رسوم شهادة) *</label>
+                    <input type="text" id="addonName" required placeholder="أدخل اسم الإضافة">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>السعر (ج.م) *</label>
+                        <input type="number" id="addonPrice" required min="0" placeholder="0.0">
+                    </div>
+                    <div class="form-group">
+                        <label>مرتبط بكورس معين؟ (اختياري)</label>
+                        <select id="addonCourseId">
+                            <option value="">عام (يظهر لكل الكورسات)</option>
+                        </select>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-cancel" id="cancelAddonModal">إلغاء</button>
+            <button class="btn-save" id="saveAddonBtn">حفظ</button>
+        </div>
+    </div>
+</div>
 <script>
-    // الرابط الجديد لـ Google Apps Script
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwIqJ0hC7xzs4I6--ocDyCHkwxwmVUk-Y0eOwYsTUCiP39MH2oetro_9ssGTniJOztRjw/exec';
     
     let currentUser = null;
     let allCourses = [];
+    let allDepts = [];
+    let allAddOns = [];
     let currentPage = 1;
     const rowsPerPage = 10;
+    let currentTab = 'courses';
     
-    // Toast Notification
     function showToast(message, type = 'info') {
         const container = document.getElementById('toastContainer');
-        const icons = { success: 'fa-check-circle', error: 'fa-exclamation-circle', warning: 'fa-exclamation-triangle', info: 'fa-info-circle' };
         const toast = document.createElement('div');
         toast.className = `toast toast-${type}`;
-        toast.innerHTML = `<i class="fas ${icons[type] || icons.info}"></i><span>${message}</span>`;
+        toast.innerHTML = `<span>${message}</span>`;
         container.appendChild(toast);
         setTimeout(() => toast.remove(), 4000);
     }
 
-    // Centralized API Call
     async function apiCall(action, data = {}) {
         try {
             const response = await fetch(SCRIPT_URL, {
@@ -886,204 +938,177 @@
                 body: JSON.stringify({ action, ...data })
             });
             const result = await response.json();
-            if (result.success === false) {
-                throw new Error(result.message || 'حدث خطأ غير معروف');
-            }
+            if (result.success === false) throw new Error(result.message || 'Error');
             return result.data !== undefined ? result.data : result;
         } catch (error) {
-            if (error.message && !error.message.includes('fetch')) {
-                showToast(error.message, 'error');
-            } else {
-                showToast('حدث خطأ في الاتصال بالخادم', 'error');
-            }
+            showToast(error.message || 'Error', 'error');
             throw error;
         }
     }
 
-    // Form Validation
-    const Validators = {
-        required: (val) => val !== null && val !== undefined && String(val).trim() !== '',
-    };
+    const Validators = { required: (val) => val !== null && val !== undefined && String(val).trim() !== '' };
 
     function validateForm(rules) {
         let isValid = true;
         for (const [fieldId, checks] of Object.entries(rules)) {
             const el = document.getElementById(fieldId);
             if (!el) continue;
-            const val = el.value;
-            let fieldValid = true;
             for (const check of checks) {
-                if (!check.fn(val)) {
-                    fieldValid = false;
+                if (!check.fn(el.value)) {
                     el.style.borderColor = 'var(--danger)';
-                    let errEl = el.parentElement.querySelector('.field-error');
-                    if (!errEl) {
-                        errEl = document.createElement('div');
-                        errEl.className = 'field-error';
-                        errEl.style.cssText = 'color: var(--danger); font-size: 11px; margin-top: 4px;';
-                        el.parentElement.appendChild(errEl);
-                    }
-                    errEl.textContent = check.msg;
-                    isValid = false;
-                    break;
+                    isValid = false; break;
                 }
             }
-            if (fieldValid) {
-                el.style.borderColor = '#e9ecef';
-                const errEl = el.parentElement.querySelector('.field-error');
-                if (errEl) errEl.remove();
-            }
+            if (isValid) el.style.borderColor = '#e9ecef';
         }
         return isValid;
     }
 
-    // Initialize
     document.addEventListener('DOMContentLoaded', function() {
-        // Check login
         const userStr = sessionStorage.getItem('loggedInUser');
-        if (!userStr) {
-            window.location.href = 'index.html';
-            return;
-        }
+        if (!userStr) { window.location.href = 'index.html'; return; }
+        currentUser = JSON.parse(userStr);
+        document.getElementById('userName').textContent = currentUser.fullName || currentUser.username;
+        document.getElementById('userRole').textContent = currentUser.roleId == 1 ? 'مدير النظام' : 'مستخدم';
         
-        try {
-            currentUser = JSON.parse(userStr);
-        } catch(e) {
-            sessionStorage.removeItem('loggedInUser');
-            window.location.href = 'index.html';
-            return;
-        }
-        
-        updateUserUI();
-        setupEventListeners();
+        setupEvents();
         loadData();
     });
 
-    function updateUserUI() {
-        document.getElementById('userName').textContent = currentUser.fullName || currentUser.username;
-        const roleNames = {1: 'مدير النظام', 2: 'محاسب', 3: 'مدير دور', 4: 'مسؤول حجوزات', 5: 'مشاهد'};
-        document.getElementById('userRole').textContent = roleNames[currentUser.roleId] || 'مستخدم';
+    function setupEvents() {
+        document.getElementById('tabCourses').addEventListener('click', () => switchTab('courses'));
+        document.getElementById('tabAddOns').addEventListener('click', () => switchTab('addons'));
+        
+        document.getElementById('searchBtn').addEventListener('click', () => filterAndRender());
+        document.getElementById('searchInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') filterAndRender(); });
+        
+        document.getElementById('addBtn').addEventListener('click', () => {
+            if(currentTab === 'courses') openCourseModal();
+            else openAddonModal();
+        });
+        
+        document.getElementById('closeCourseModal').addEventListener('click', () => closeModals());
+        document.getElementById('cancelCourseModal').addEventListener('click', () => closeModals());
+        document.getElementById('saveCourseBtn').addEventListener('click', () => saveCourse());
+        
+        document.getElementById('closeAddonModal').addEventListener('click', () => closeModals());
+        document.getElementById('cancelAddonModal').addEventListener('click', () => closeModals());
+        document.getElementById('saveAddonBtn').addEventListener('click', () => saveAddon());
     }
 
-    function setupEventListeners() {
-        // Mobile menu toggle
-        document.getElementById('menuToggle').addEventListener('click', function() {
-            document.getElementById('sidebar').classList.toggle('open');
-        });
+    function switchTab(tab) {
+        currentTab = tab;
+        document.getElementById('tabCourses').style.background = tab === 'courses' ? 'var(--primary-blue)' : 'transparent';
+        document.getElementById('tabCourses').style.color = tab === 'courses' ? 'white' : 'var(--dark)';
+        document.getElementById('tabAddOns').style.background = tab === 'addons' ? 'var(--primary-blue)' : 'transparent';
+        document.getElementById('tabAddOns').style.color = tab === 'addons' ? 'white' : 'var(--dark)';
         
-        // Logout
-        document.getElementById('logoutBtn').addEventListener('click', function() {
-            sessionStorage.removeItem('loggedInUser');
-            window.location.href = 'index.html';
-        });
+        document.getElementById('coursesSection').style.display = tab === 'courses' ? 'block' : 'none';
+        document.getElementById('addonsSection').style.display = tab === 'addons' ? 'block' : 'none';
         
-        // Search
-        document.getElementById('searchBtn').addEventListener('click', () => searchusers());
-        document.getElementById('searchInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') searchusers();
-        });
+        document.getElementById('addBtnText').textContent = tab === 'courses' ? 'إضافة كورس جديد' : 'إضافة ملحق جديد';
         
-        // Modal
-        document.getElementById('addCourseBtn').addEventListener('click', () => openAddModal());
-        document.getElementById('closeModal').addEventListener('click', () => closeModal());
-        document.getElementById('cancelModal').addEventListener('click', () => closeModal());
-        document.getElementById('saveCourse').addEventListener('click', () => saveCourse());
-        
-        // Close modal on outside click
-        window.addEventListener('click', (e) => {
-            const modal = document.getElementById('courseModal');
-            if (e.target === modal) closeModal();
-        });
+        currentPage = 1;
+        filterAndRender();
     }
 
     async function loadData() {
         showLoading(true);
         try {
-            const [coursesRes, deptsRes] = await Promise.all([
+            const [coursesRes, deptsRes, addonsRes] = await Promise.all([
                 apiCall('getAllCourses'),
-                apiCall('getAllDepartments')
+                apiCall('getAllDepartments'),
+                apiCall('getAllAddOns')
             ]);
+            allDepts = deptsRes || [];
+            allAddOns = addonsRes || [];
             
-            // Populate select
             const deptSelect = document.getElementById('courseDeptId');
-            deptSelect.innerHTML = '<option value="">بدون قسم</option>' + 
-                (deptsRes || []).map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+            deptSelect.innerHTML = '<option value="">بدون قسم</option>' + allDepts.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+            
+            const addonCourseSelect = document.getElementById('addonCourseId');
+            addonCourseSelect.innerHTML = '<option value="">عام (يظهر لكل الكورسات)</option>' + (coursesRes || []).map(c => `<option value="${c.id}">${c.name}</option>`).join('');
                 
-            // Map deptName to courses
-            allCourses = coursesRes.map(c => {
-                const dept = deptsRes.find(d => d.id == c.deptId);
+            allCourses = (coursesRes || []).map(c => {
+                const dept = allDepts.find(d => d.id == c.deptId);
                 return { ...c, deptName: dept ? dept.name : '-' };
             });
             
             filterAndRender();
-        } catch (error) {
-            console.error('Error:', error);
-            // Error handled in apiCall
-        }
+        } catch (error) {}
         showLoading(false);
     }
     
     function filterAndRender() {
         const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-        let filtered = [...allCourses];
         
-        if (searchTerm) {
-            filtered = filtered.filter(s => 
-                (s.name && s.name.toLowerCase().includes(searchTerm)) ||
-                (s.deptName && s.deptName.toLowerCase().includes(searchTerm))
-            );
+        if (currentTab === 'courses') {
+            let filtered = allCourses.filter(s => (s.name && s.name.toLowerCase().includes(searchTerm)) || (s.deptName && s.deptName.toLowerCase().includes(searchTerm)));
+            renderCourses(filtered);
+        } else {
+            let filtered = allAddOns.filter(s => s.name && s.name.toLowerCase().includes(searchTerm));
+            renderAddons(filtered);
         }
-        
-        renderTable(filtered);
     }
     
-    function searchusers() {
-        currentPage = 1;
-        filterAndRender();
-    }
-    
-    function renderTable(users) {
+    function renderCourses(data) {
         const tbody = document.getElementById('coursesTableBody');
-        
-        if (!users || users.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">لا توجد كورسات</td></tr>';
+        if (!data || data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">لا توجد بيانات</td></tr>';
             document.getElementById('pagination').innerHTML = '';
             return;
         }
         
-        // Pagination
-        const totalPages = Math.ceil(users.length / rowsPerPage);
         const start = (currentPage - 1) * rowsPerPage;
-        const paginated = users.slice(start, start + rowsPerPage);
+        const paginated = data.slice(start, start + rowsPerPage);
         
-        // Render rows
+        tbody.innerHTML = paginated.map(s => `
+            <tr>
+                <td><strong>${s.id || '-'}</strong></td>
+                <td>${s.name || '-'}</td>
+                <td>${s.deptName || '-'}</td>
+                <td>${s.pricePerLevel || 0} ج.م</td>
+                <td>${s.durationLevels || 1}</td>
+                <td class="action-buttons">
+                    <button class="btn-icon btn-edit" onclick="editCourse(${s.id})"><i class="fas fa-edit"></i></button>
+                    <button class="btn-icon btn-delete" onclick="deleteCourse(${s.id})"><i class="fas fa-trash"></i></button>
+                </td>
+            </tr>
+        `).join('');
+        renderPagination(Math.ceil(data.length / rowsPerPage));
+    }
+
+    function renderAddons(data) {
+        const tbody = document.getElementById('addonsTableBody');
+        if (!data || data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">لا توجد بيانات</td></tr>';
+            document.getElementById('pagination').innerHTML = '';
+            return;
+        }
+        
+        const start = (currentPage - 1) * rowsPerPage;
+        const paginated = data.slice(start, start + rowsPerPage);
+        
         tbody.innerHTML = paginated.map(s => {
+            const course = allCourses.find(c => c.id == s.courseId);
             return `
-                <tr>
-                    <td><strong>${s.id || '-'}</strong></td>
-                    <td>${s.name || '-'}</td>
-                    <td>${s.deptName || '-'}</td>
-                    <td>${s.pricePerLevel || 0} ج.م</td>
-                    <td>${s.durationLevels || 1}</td>
-                    <td class="action-buttons">
-                        <button class="btn-icon btn-edit" onclick="editCourse(${s.id})"><i class="fas fa-edit"></i></button>
-                        <button class="btn-icon btn-delete" onclick="deleteCourse(${s.id})"><i class="fas fa-trash"></i></button>
-                    </td>
-                </tr>
-            `;
-        }).join('');
-        
-        // Render pagination
-        renderPagination(totalPages);
+            <tr>
+                <td><strong>${s.id || '-'}</strong></td>
+                <td>${s.name || '-'}</td>
+                <td><span style="color:var(--success); font-weight:bold;">${s.price || 0} ج.م</span></td>
+                <td>${course ? course.name : '<span style="color:var(--gray);">عام</span>'}</td>
+                <td class="action-buttons">
+                    <button class="btn-icon btn-edit" onclick="editAddon(${s.id})"><i class="fas fa-edit"></i></button>
+                    <button class="btn-icon btn-delete" onclick="deleteAddon(${s.id})"><i class="fas fa-trash"></i></button>
+                </td>
+            </tr>
+        `}).join('');
+        renderPagination(Math.ceil(data.length / rowsPerPage));
     }
     
     function renderPagination(totalPages) {
         const container = document.getElementById('pagination');
-        if (totalPages <= 1) {
-            container.innerHTML = '';
-            return;
-        }
-        
+        if (totalPages <= 1) { container.innerHTML = ''; return; }
         let html = '';
         for (let i = 1; i <= totalPages; i++) {
             html += `<button class="${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
@@ -1091,25 +1116,21 @@
         container.innerHTML = html;
     }
     
-    function goToPage(page) {
-        currentPage = page;
-        filterAndRender();
-    }
+    function goToPage(page) { currentPage = page; filterAndRender(); }
     
-    function viewCourse(id) {
-        const user = allCourses.find(s => s.id == id);
-        if (user) {
-            const roleNames = {1: 'مدير النظام', 2: 'محاسب', 3: 'مدير دور', 4: 'مسؤول حجوزات', 5: 'مشاهد'};
-            const roleName = roleNames[user.roleId] || 'مستخدم';
-            showToast(`المستخدم: ${user.fullName} | الهاتف: ${user.phone || '-'} | الصلاحية: ${roleName} | الحالة: ${user.isActive ? 'نشط' : 'غير نشط'}`, 'info');
-        }
+    // --- COURSES ---
+    function openCourseModal() {
+        document.getElementById('courseModalTitle').textContent = 'إضافة كورس جديد';
+        document.getElementById('courseForm').reset();
+        document.getElementById('courseId').value = '';
+        document.getElementById('courseModal').classList.add('show');
     }
     
     function editCourse(id) {
         const user = allCourses.find(s => s.id == id);
         if (user) {
-            document.getElementById('modalTitle').textContent = 'تعديل الكورس';
-            document.getElementById('userId').value = user.id;
+            document.getElementById('courseModalTitle').textContent = 'تعديل الكورس';
+            document.getElementById('courseId').value = user.id;
             document.getElementById('courseName').value = user.name || '';
             document.getElementById('courseDeptId').value = user.deptId || '';
             document.getElementById('coursePrice').value = user.pricePerLevel || 0;
@@ -1118,57 +1139,84 @@
         }
     }
     
-    function openAddModal() {
-        document.getElementById('modalTitle').textContent = 'إضافة كورس جديد';
-        document.getElementById('courseForm').reset();
-        document.getElementById('userId').value = '';
-        document.getElementById('courseModal').classList.add('show');
-    }
-    
-    function closeModal() {
-        document.getElementById('courseModal').classList.remove('show');
-    }
-    
     async function saveCourse() {
-        const rules = {
-            courseName: [{ fn: Validators.required, msg: 'الاسم مطلوب' }],
-            coursePrice: [{ fn: Validators.required, msg: 'السعر مطلوب' }]
-        };
-        
+        const rules = { courseName: [{ fn: Validators.required, msg: 'الاسم مطلوب' }], coursePrice: [{ fn: Validators.required, msg: 'السعر مطلوب' }] };
         if (!validateForm(rules)) return;
         
-        const userData = {
-            id: document.getElementById('userId').value || null,
+        const data = {
+            id: document.getElementById('courseId').value || null,
             name: document.getElementById('courseName').value,
             deptId: document.getElementById('courseDeptId').value,
             pricePerLevel: document.getElementById('coursePrice').value,
             durationLevels: document.getElementById('courseLevels').value
         };
-        
         showLoading(true);
         try {
-            await apiCall('saveCourse', { data: userData });
+            await apiCall('saveCourse', { courseData: data });
             showToast('تم الحفظ بنجاح', 'success');
-            closeModal();
-            loadData();
-        } catch (error) {
-            // Error handled in apiCall
-        }
+            closeModals(); loadData();
+        } catch (e) {}
         showLoading(false);
     }
     
     async function deleteCourse(id) {
         if (confirm('هل أنت متأكد من حذف هذا الكورس؟')) {
             showLoading(true);
-            try {
-                await apiCall('deleteCourse', { id: id });
-                showToast('تم الحذف بنجاح', 'success');
-                loadData();
-            } catch (error) {
-                // Error handled in apiCall
-            }
+            try { await apiCall('deleteCourse', { id }); showToast('تم الحذف بنجاح', 'success'); loadData(); } catch (e) {}
             showLoading(false);
         }
+    }
+
+    // --- ADDONS ---
+    function openAddonModal() {
+        document.getElementById('addonModalTitle').textContent = 'إضافة ملحق جديد';
+        document.getElementById('addonForm').reset();
+        document.getElementById('addonId').value = '';
+        document.getElementById('addonModal').classList.add('show');
+    }
+
+    function editAddon(id) {
+        const addon = allAddOns.find(s => s.id == id);
+        if (addon) {
+            document.getElementById('addonModalTitle').textContent = 'تعديل الملحق';
+            document.getElementById('addonId').value = addon.id;
+            document.getElementById('addonName').value = addon.name || '';
+            document.getElementById('addonPrice').value = addon.price || 0;
+            document.getElementById('addonCourseId').value = addon.courseId || '';
+            document.getElementById('addonModal').classList.add('show');
+        }
+    }
+
+    async function saveAddon() {
+        const rules = { addonName: [{ fn: Validators.required, msg: 'الاسم مطلوب' }], addonPrice: [{ fn: Validators.required, msg: 'السعر مطلوب' }] };
+        if (!validateForm(rules)) return;
+        
+        const data = {
+            id: document.getElementById('addonId').value || null,
+            name: document.getElementById('addonName').value,
+            price: document.getElementById('addonPrice').value,
+            courseId: document.getElementById('addonCourseId').value
+        };
+        showLoading(true);
+        try {
+            await apiCall('saveAddOn', { addonData: data });
+            showToast('تم الحفظ بنجاح', 'success');
+            closeModals(); loadData();
+        } catch (e) {}
+        showLoading(false);
+    }
+
+    async function deleteAddon(id) {
+        if (confirm('هل أنت متأكد من حذف هذه الإضافة؟')) {
+            showLoading(true);
+            try { await apiCall('deleteAddOn', { id }); showToast('تم الحذف بنجاح', 'success'); loadData(); } catch (e) {}
+            showLoading(false);
+        }
+    }
+
+    function closeModals() {
+        document.getElementById('courseModal').classList.remove('show');
+        document.getElementById('addonModal').classList.remove('show');
     }
     
     function showLoading(show) {
@@ -1177,10 +1225,8 @@
         else overlay.classList.remove('show');
     }
     
-    // Make functions global for onclick
-    window.viewCourse = viewCourse;
-    window.editCourse = editCourse;
-    window.deleteCourse = deleteCourse;
+    window.editCourse = editCourse; window.deleteCourse = deleteCourse;
+    window.editAddon = editAddon; window.deleteAddon = deleteAddon;
     window.goToPage = goToPage;
 </script>
 
