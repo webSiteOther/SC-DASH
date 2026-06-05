@@ -599,6 +599,9 @@
 </div>
 
 <script>
+    // الرابط الجديد لـ Google Apps Script
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxOlbPXo97sbdQA9tny8aRZpx64jxNzZ4_NcHwmXVFnyw_7giNmavJcWaf84oW5KCDgpQ/exec';
+    
     let currentUser = null;
     let allStudents = [];
     let allPayments = [];
@@ -681,24 +684,38 @@
         // Print buttons
         document.getElementById('printStudents').addEventListener('click', () => window.print());
         document.getElementById('printOverdue').addEventListener('click', () => window.print());
-        
-        // Trainer filter for attendance
-        const trainerFilter = document.getElementById('attendanceTrainerFilter');
-        if (allTrainers) {
-            trainerFilter.innerHTML = '<option value="all">الكل</option>';
-            allTrainers.forEach(t => {
-                trainerFilter.innerHTML += `<option value="${t.id}">${t.name}</option>`;
-            });
-        }
     }
 
     async function loadData() {
         showLoading(true);
         try {
-            allStudents = await google.script.run.withSuccessHandler(r => r).withFailureHandler(() => []).getAllStudents();
-            allPayments = await google.script.run.withSuccessHandler(r => r).withFailureHandler(() => []).getAllPayments();
-            allTrainers = await google.script.run.withSuccessHandler(r => r).withFailureHandler(() => []).getAllTrainers();
-            allBookings = await google.script.run.withSuccessHandler(r => r).withFailureHandler(() => []).getAllBookings();
+            const studentsResponse = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'getAllStudents' })
+            });
+            allStudents = await studentsResponse.json();
+            
+            const paymentsResponse = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'getAllPayments' })
+            });
+            allPayments = await paymentsResponse.json();
+            
+            const trainersResponse = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'getAllTrainers' })
+            });
+            allTrainers = await trainersResponse.json();
+            
+            const bookingsResponse = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'getAllBookings' })
+            });
+            allBookings = await bookingsResponse.json();
             
             if (!allStudents || allStudents.length === 0) loadDemoStudents();
             if (!allPayments || allPayments.length === 0) loadDemoPayments();
@@ -960,6 +977,5 @@
     }
 </script>
 
-<script src="https://script.google.com/macros/s/AKfycbwu74ENNNJlrC8dhCc1k-e3wgp138KVTUF3I1A9MsnOidXqDuGxeIhydaASD3fw9KepsA/exec"></script>
 </body>
 </html>
