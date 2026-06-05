@@ -475,6 +475,37 @@
         }
         @keyframes spin { to { transform: rotate(360deg); } }
 
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .toast {
+            padding: 14px 24px;
+            border-radius: 14px;
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: toastIn 0.3s ease, toastOut 0.3s ease 3.7s forwards;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            max-width: 400px;
+            font-family: inherit;
+        }
+        .toast-success { background: linear-gradient(135deg, #2ecc71, #27ae60); }
+        .toast-error { background: linear-gradient(135deg, #e74c3c, #c0392b); }
+        .toast-warning { background: linear-gradient(135deg, #f39c12, #e67e22); }
+        .toast-info { background: linear-gradient(135deg, #3498db, #2980b9); }
+        @keyframes toastIn { from { opacity: 0; transform: translateX(-30px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes toastOut { from { opacity: 1; } to { opacity: 0; transform: translateX(-30px); } }
+
         .empty-state { text-align: center; padding: 50px; color: var(--gray); }
 
         /* Responsive */
@@ -494,6 +525,7 @@
     </style>
 </head>
 <body>
+<div class="toast-container" id="toastContainer"></div>
 
 <div class="loading-overlay" id="loadingOverlay">
     <div class="loading-spinner"></div>
@@ -513,12 +545,48 @@
             <div class="user-role" id="userRole"></div>
         </div>
         <ul class="nav-menu">
-            <li class="nav-item"><a href="#" class="nav-link" data-page="dashboard"><i class="fas fa-tachometer-alt"></i><span>الرئيسية</span></a></li>
-            <li class="nav-item"><a href="#" class="nav-link" data-page="students"><i class="fas fa-users"></i><span>الطلاب</span></a></li>
-            <li class="nav-item"><a href="#" class="nav-link" data-page="trainers"><i class="fas fa-chalkboard-user"></i><span>المدربين</span></a></li>
-            <li class="nav-item"><a href="#" class="nav-link" data-page="schedule"><i class="fas fa-calendar-alt"></i><span>الجدول</span></a></li>
-            <li class="nav-item"><a href="#" class="nav-link active" data-page="payments"><i class="fas fa-money-bill-wave"></i><span>المدفوعات</span></a></li>
-            <li class="nav-item"><a href="#" class="nav-link" data-page="reports"><i class="fas fa-chart-line"></i><span>التقارير</span></a></li>
+            <li class="nav-item">
+                <a href="dashboard.html" class="nav-link">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>الرئيسية</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="students.html" class="nav-link">
+                    <i class="fas fa-users"></i>
+                    <span>الطلاب</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="trainers.html" class="nav-link">
+                    <i class="fas fa-chalkboard-user"></i>
+                    <span>المدربين</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="schedule.html" class="nav-link">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span>الجدول</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="payments.html" class="nav-link active">
+                    <i class="fas fa-money-bill-wave"></i>
+                    <span>المدفوعات</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="reports.html" class="nav-link">
+                    <i class="fas fa-chart-line"></i>
+                    <span>التقارير</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="settings.html" class="nav-link">
+                    <i class="fas fa-cog"></i>
+                    <span>الإعدادات</span>
+                </a>
+            </li>
         </ul>
     </aside>
 
@@ -691,10 +759,88 @@
     let allStudents = [];
     let paymentChart, revenueChart;
 
+    // Toast Notification
+    function showToast(message, type = 'info') {
+        const container = document.getElementById('toastContainer');
+        const icons = { success: 'fa-check-circle', error: 'fa-exclamation-circle', warning: 'fa-exclamation-triangle', info: 'fa-info-circle' };
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.innerHTML = `<i class="fas ${icons[type] || icons.info}"></i><span>${message}</span>`;
+        container.appendChild(toast);
+        setTimeout(() => toast.remove(), 4000);
+    }
+
+    // Centralized API Call
+    async function apiCall(action, data = {}) {
+        try {
+            const response = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({ action, ...data })
+            });
+            const result = await response.json();
+            if (result.success === false) {
+                throw new Error(result.message || 'حدث خطأ غير معروف');
+            }
+            return result.data !== undefined ? result.data : result;
+        } catch (error) {
+            if (error.message && !error.message.includes('fetch')) {
+                showToast(error.message, 'error');
+            } else {
+                showToast('حدث خطأ في الاتصال بالخادم', 'error');
+            }
+            throw error;
+        }
+    }
+
+    // Form Validation
+    const Validators = {
+        required: (val) => val !== null && val !== undefined && String(val).trim() !== '',
+        numeric: (val) => !val || (!isNaN(val) && val !== ''),
+    };
+
+    function validateForm(rules) {
+        let isValid = true;
+        for (const [fieldId, checks] of Object.entries(rules)) {
+            const el = document.getElementById(fieldId);
+            if (!el) continue;
+            const val = el.value;
+            let fieldValid = true;
+            for (const check of checks) {
+                if (!check.fn(val)) {
+                    fieldValid = false;
+                    el.style.borderColor = 'var(--danger)';
+                    let errEl = el.parentElement.querySelector('.field-error');
+                    if (!errEl) {
+                        errEl = document.createElement('div');
+                        errEl.className = 'field-error';
+                        errEl.style.cssText = 'color: var(--danger); font-size: 11px; margin-top: 4px;';
+                        el.parentElement.appendChild(errEl);
+                    }
+                    errEl.textContent = check.msg;
+                    isValid = false;
+                    break;
+                }
+            }
+            if (fieldValid) {
+                el.style.borderColor = '#e9ecef';
+                const errEl = el.parentElement.querySelector('.field-error');
+                if (errEl) errEl.remove();
+            }
+        }
+        return isValid;
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
         const userStr = sessionStorage.getItem('loggedInUser');
         if (!userStr) { window.location.href = 'index.html'; return; }
-        currentUser = JSON.parse(userStr);
+        try {
+            currentUser = JSON.parse(userStr);
+        } catch(e) {
+            sessionStorage.removeItem('loggedInUser');
+            window.location.href = 'index.html';
+            return;
+        }
         updateUserUI();
         setupEventListeners();
         loadData();
@@ -709,14 +855,6 @@
     function setupEventListeners() {
         document.getElementById('menuToggle').addEventListener('click', () => document.getElementById('sidebar').classList.toggle('open'));
         document.getElementById('logoutBtn').addEventListener('click', () => { sessionStorage.removeItem('loggedInUser'); window.location.href = 'index.html'; });
-        
-        document.querySelectorAll('.nav-link').forEach(link => {
-            link.addEventListener('click', function(e) {
-                e.preventDefault();
-                const page = this.dataset.page;
-                if (page) window.location.href = page + '.html';
-            });
-        });
         
         document.getElementById('searchBtn').addEventListener('click', () => filterAndRender());
         document.getElementById('searchInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') filterAndRender(); });
@@ -734,46 +872,17 @@
     async function loadData() {
         showLoading(true);
         try {
-            const paymentsResponse = await fetch(SCRIPT_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body: JSON.stringify({ action: 'getAllPayments' })
-            });
-            allPayments = await paymentsResponse.json();
+            allPayments = await apiCall('getAllPayments');
+            allStudents = await apiCall('getAllStudents');
             
-            const studentsResponse = await fetch(SCRIPT_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body: JSON.stringify({ action: 'getAllStudents' })
-            });
-            allStudents = await studentsResponse.json();
-            
-            if (!allStudents || allStudents.length === 0) loadDemoData();
             updateStats();
             updateCharts();
             filterAndRender();
-        } catch(e) { console.error(e); loadDemoData(); }
+        } catch(e) { 
+            console.error(e); 
+            // Error handled in apiCall
+        }
         showLoading(false);
-    }
-
-    function loadDemoData() {
-        allStudents = [
-            {id: 1, code: "IT-1001", name: "يوسف أحمد", deptId: 1},
-            {id: 2, code: "IT-1002", name: "ليلى محمد", deptId: 1},
-            {id: 3, code: "LANG-2001", name: "عمر خالد", deptId: 2},
-            {id: 4, code: "BUS-3001", name: "سلمى هاني", deptId: 3},
-            {id: 5, code: "IT-1003", name: "مريم طارق", deptId: 1},
-        ];
-        allPayments = [
-            {id: 1, studentId: 1, studentName: "يوسف أحمد", levelNumber: 1, amountPaid: 500, totalFee: 500, remainingBalance: 0, paymentDate: "2025-01-10"},
-            {id: 2, studentId: 2, studentName: "ليلى محمد", levelNumber: 1, amountPaid: 300, totalFee: 500, remainingBalance: 200, paymentDate: "2025-01-15"},
-            {id: 3, studentId: 3, studentName: "عمر خالد", levelNumber: 1, amountPaid: 300, totalFee: 300, remainingBalance: 0, paymentDate: "2025-01-20"},
-            {id: 4, studentId: 4, studentName: "سلمى هاني", levelNumber: 1, amountPaid: 400, totalFee: 700, remainingBalance: 300, paymentDate: "2025-01-05"},
-            {id: 5, studentId: 5, studentName: "مريم طارق", levelNumber: 1, amountPaid: 250, totalFee: 500, remainingBalance: 250, paymentDate: "2025-01-12"},
-        ];
-        updateStats();
-        updateCharts();
-        filterAndRender();
     }
 
     function updateStats() {
@@ -899,39 +1008,43 @@
     }
 
     async function savePayment() {
+        const rules = {
+            selectedStudentId: [{ fn: Validators.required, msg: 'يرجى اختيار الطالب' }],
+            amountPaid: [{ fn: Validators.required, msg: 'المبلغ مطلوب' }, { fn: Validators.numeric, msg: 'المبلغ يجب أن يكون رقماً' }]
+        };
+        
+        if (!validateForm(rules)) return;
+        
         const paymentData = {
             studentId: document.getElementById('selectedStudentId').value,
-            levelNumber: parseInt(document.getElementById('levelNumber').value),
-            totalLevelFee: parseFloat(document.getElementById('totalLevelFee').value),
-            amountPaid: parseFloat(document.getElementById('amountPaid').value),
+            levelNumber: parseInt(document.getElementById('levelNumber').value, 10) || 1,
+            totalLevelFee: parseFloat(document.getElementById('totalLevelFee').value) || 0,
+            amountPaid: parseFloat(document.getElementById('amountPaid').value) || 0,
             paymentDate: document.getElementById('paymentDate').value,
             createdBy: currentUser.id
         };
         
-        if (!paymentData.studentId || !paymentData.amountPaid || paymentData.amountPaid <= 0) {
-            alert('الرجاء إدخال بيانات صحيحة');
+        if (paymentData.amountPaid <= 0) {
+            showToast('المبلغ المدفوع يجب أن يكون أكبر من صفر', 'warning');
             return;
         }
         
         showLoading(true);
         try {
-            const response = await fetch(SCRIPT_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body: JSON.stringify({ action: 'savePayment', data: paymentData })
-            });
-            const result = await response.json();
+            await apiCall('savePayment', paymentData);
+            showToast('تم تسجيل الدفعة بنجاح', 'success');
             closeModal();
             loadData();
-            alert(result.message);
-        } catch(e) { alert('حدث خطأ: ' + e); }
+        } catch(e) { 
+            // Error handled in apiCall
+        }
         showLoading(false);
     }
 
     function viewPayment(id) {
         const payment = allPayments.find(p => p.id == id);
         if (payment) {
-            alert(`تفاصيل الدفعة:\nالطالب: ${payment.studentName}\nالمستوى: ${payment.levelNumber}\nالمبلغ: ${payment.amountPaid} ج.م\nالمتبقي: ${payment.remainingBalance} ج.م\nالتاريخ: ${payment.paymentDate}`);
+            showToast(`تفاصيل الدفعة: الطالب: ${payment.studentName} | المستوى: ${payment.levelNumber || 1} | المبلغ: ${payment.amountPaid} ج.م | المتبقي: ${payment.remainingBalance} ج.م | التاريخ: ${payment.paymentDate ? new Date(payment.paymentDate).toLocaleDateString('ar-EG') : '-'}`, 'info');
         }
     }
 
@@ -939,15 +1052,12 @@
         if (confirm('هل أنت متأكد من حذف هذه الدفعة؟')) {
             showLoading(true);
             try {
-                const response = await fetch(SCRIPT_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify({ action: 'deletePayment', id: id })
-                });
-                const result = await response.json();
+                await apiCall('deletePayment', { paymentId: id });
+                showToast('تم حذف الدفعة بنجاح', 'success');
                 loadData();
-                alert(result.message);
-            } catch(e) { alert('حدث خطأ: ' + e); }
+            } catch(e) { 
+                // Error handled in apiCall
+            }
             showLoading(false);
         }
     }
