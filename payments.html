@@ -724,18 +724,30 @@
         window.addEventListener('click', (e) => { if (e.target === document.getElementById('paymentModal')) closeModal(); });
     }
 
-    async function loadData() {
-        showLoading(true);
-        try {
-            allPayments = await google.script.run.withSuccessHandler(r => r).withFailureHandler(() => []).getAllPayments();
-            allStudents = await google.script.run.withSuccessHandler(r => r).withFailureHandler(() => loadDemoData()).getAllStudents();
-            if (!allStudents || allStudents.length === 0) loadDemoData();
-            updateStats();
-            updateCharts();
-            filterAndRender();
-        } catch(e) { console.error(e); loadDemoData(); }
-        showLoading(false);
-    }
+   async function loadData() {
+    showLoading(true);
+    try {
+        const paymentsResponse = await fetch('https://script.google.com/macros/s/AKfycbxOlbPXo97sbdQA9tny8aRZpx64jxNzZ4_NcHwmXVFnyw_7giNmavJcWaf84oW5KCDgpQ/exec', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'getAllPayments' })
+        });
+        allPayments = await paymentsResponse.json();
+        
+        const studentsResponse = await fetch('https://script.google.com/macros/s/AKfycbxOlbPXo97sbdQA9tny8aRZpx64jxNzZ4_NcHwmXVFnyw_7giNmavJcWaf84oW5KCDgpQ/exec', {
+            method: 'POST',
+            headers: { 'Content-Type':application/json' },
+            body: JSON.stringify({ action: 'getAllStudents' })
+        });
+        allStudents = await studentsResponse.json();
+        
+        if (!allStudents || allStudents.length === 0) loadDemoData();
+        updateStats();
+        updateCharts();
+        filterAndRender();
+    } catch(e) { console.error(e); loadDemoData(); }
+    showLoading(false);
+}
 
     function loadDemoData() {
         allStudents = [
@@ -880,32 +892,34 @@
     }
 
     async function savePayment() {
-        const paymentData = {
-            studentId: document.getElementById('selectedStudentId').value,
-            levelNumber: parseInt(document.getElementById('levelNumber').value),
-            totalLevelFee: parseFloat(document.getElementById('totalLevelFee').value),
-            amountPaid: parseFloat(document.getElementById('amountPaid').value),
-            paymentDate: document.getElementById('paymentDate').value,
-            createdBy: currentUser.id
-        };
-        
-        if (!paymentData.studentId || !paymentData.amountPaid || paymentData.amountPaid <= 0) {
-            alert('الرجاء إدخال بيانات صحيحة');
-            return;
-        }
-        
-        showLoading(true);
-        try {
-            const result = await google.script.run.withSuccessHandler(function(res) {
-                closeModal();
-                loadData();
-                alert(res.message);
-            }).withFailureHandler(function(error) {
-                alert('حدث خطأ: ' + error.message);
-            }).savePayment(paymentData);
-        } catch(e) { alert('حدث خطأ: ' + e); }
-        showLoading(false);
+    const paymentData = {
+        studentId: document.getElementById('selectedStudentId').value,
+        levelNumber: parseInt(document.getElementById('levelNumber').value),
+        totalLevelFee: parseFloat(document.getElementById('totalLevelFee').value),
+        amountPaid: parseFloat(document.getElementById('amountPaid').value),
+        paymentDate: document.getElementById('paymentDate').value,
+        createdBy: currentUser.id
+    };
+    
+    if (!paymentData.studentId || !paymentData.amountPaid || paymentData.amountPaid <= 0) {
+        alert('الرجاء إدخال بيانات صحيحة');
+        return;
     }
+    
+    showLoading(true);
+    try {
+        const response = await fetch('https://script.google.com/macros/s/AKfycbxOlbPXo97sbdQA9tny8aRZpx64jxNzZ4_NcHwmXVFnyw_7giNmavJcWaf84oW5KCDgpQ/exec', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'savePayment', data: paymentData })
+        });
+        const result = await response.json();
+        closeModal();
+        loadData();
+        alert(result.message);
+    } catch(e) { alert('حدث خطأ: ' + e); }
+    showLoading(false);
+}
 
     function viewPayment(id) {
         const payment = allPayments.find(p => p.id == id);
@@ -914,20 +928,22 @@
         }
     }
 
-    async function deletePayment(id) {
-        if (confirm('هل أنت متأكد من حذف هذه الدفعة؟')) {
-            showLoading(true);
-            try {
-                const result = await google.script.run.withSuccessHandler(function(res) {
-                    loadData();
-                    alert(res.message);
-                }).withFailureHandler(function(error) {
-                    alert('حدث خطأ: ' + error.message);
-                }).deletePayment(id);
-            } catch(e) { alert('حدث خطأ: ' + e); }
-            showLoading(false);
-        }
+   async function deletePayment(id) {
+    if (confirm('هل أنت متأكد من حذف هذه الدفعة؟')) {
+        showLoading(true);
+        try {
+            const response = await fetch('https://script.google.com/macros/s/AKfycbxOlbPXo97sbdQA9tny8aRZpx64jxNzZ4_NcHwmXVFnyw_7giNmavJcWaf84oW5KCDgpQ/exec', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'deletePayment', id: id })
+            });
+            const result = await response.json();
+            loadData();
+            alert(result.message);
+        } catch(e) { alert('حدث خطأ: ' + e); }
+        showLoading(false);
     }
+}
 
     function showLoading(show) {
         const overlay = document.getElementById('loadingOverlay');
