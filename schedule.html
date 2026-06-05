@@ -601,6 +601,9 @@
 </div>
 
 <script>
+    // الرابط الجديد لـ Google Apps Script
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxOlbPXo97sbdQA9tny8aRZpx64jxNzZ4_NcHwmXVFnyw_7giNmavJcWaf84oW5KCDgpQ/exec';
+    
     let currentUser = null;
     let allBookings = [];
     let allHalls = [];
@@ -661,10 +664,33 @@
     async function loadData() {
         showLoading(true);
         try {
-            allBookings = await google.script.run.withSuccessHandler(r => r).withFailureHandler(() => []).getAllBookings();
-            allHalls = await google.script.run.withSuccessHandler(r => r).withFailureHandler(() => loadDemoHalls()).getAllHalls();
-            allTrainers = await google.script.run.withSuccessHandler(r => r).withFailureHandler(() => loadDemoTrainers()).getAllTrainers();
-            allGroups = await google.script.run.withSuccessHandler(r => r).withFailureHandler(() => []).getAllGroups();
+            const bookingsResponse = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'getAllBookings' })
+            });
+            allBookings = await bookingsResponse.json();
+            
+            const hallsResponse = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'getAllHalls' })
+            });
+            allHalls = await hallsResponse.json();
+            
+            const trainersResponse = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'getAllTrainers' })
+            });
+            allTrainers = await trainersResponse.json();
+            
+            const groupsResponse = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'getAllGroups' })
+            });
+            allGroups = await groupsResponse.json();
             
             if (!allHalls || allHalls.length === 0) loadDemoHalls();
             if (!allTrainers || allTrainers.length === 0) loadDemoTrainers();
@@ -908,13 +934,15 @@
         
         showLoading(true);
         try {
-            const result = await google.script.run.withSuccessHandler(function(res) {
-                closeModal();
-                loadData();
-                alert(res.message);
-            }).withFailureHandler(function(error) {
-                alert('حدث خطأ: ' + error.message);
-            }).saveBooking(bookingData);
+            const response = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'saveBooking', data: bookingData })
+            });
+            const result = await response.json();
+            closeModal();
+            loadData();
+            alert(result.message);
         } catch(e) { alert('حدث خطأ: ' + e); }
         showLoading(false);
     }
@@ -925,13 +953,15 @@
         if (confirm('هل أنت متأكد من حذف هذا الحجز؟')) {
             showLoading(true);
             try {
-                const result = await google.script.run.withSuccessHandler(function(res) {
-                    closeModal();
-                    loadData();
-                    alert(res.message);
-                }).withFailureHandler(function(error) {
-                    alert('حدث خطأ: ' + error.message);
-                }).deleteBooking(id);
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'deleteBooking', id: id })
+                });
+                const result = await response.json();
+                closeModal();
+                loadData();
+                alert(result.message);
             } catch(e) { alert('حدث خطأ: ' + e); }
             showLoading(false);
         }
@@ -947,6 +977,5 @@
     window.openAddModalAtSlot = openAddModalAtSlot;
 </script>
 
-<script src="https://script.google.com/macros/s/AKfycbwu74ENNNJlrC8dhCc1k-e3wgp138KVTUF3I1A9MsnOidXqDuGxeIhydaASD3fw9KepsA/exec"></script>
 </body>
 </html>
