@@ -540,9 +540,41 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .toast {
+            padding: 14px 24px;
+            border-radius: 14px;
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: toastIn 0.3s ease, toastOut 0.3s ease 3.7s forwards;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            max-width: 400px;
+            font-family: inherit;
+        }
+        .toast-success { background: linear-gradient(135deg, #2ecc71, #27ae60); }
+        .toast-error { background: linear-gradient(135deg, #e74c3c, #c0392b); }
+        .toast-warning { background: linear-gradient(135deg, #f39c12, #e67e22); }
+        .toast-info { background: linear-gradient(135deg, #3498db, #2980b9); }
+        @keyframes toastIn { from { opacity: 0; transform: translateX(-30px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes toastOut { from { opacity: 1; } to { opacity: 0; transform: translateX(-30px); } }
     </style>
 </head>
 <body>
+<div class="toast-container" id="toastContainer"></div>
 
 <div class="loading-overlay" id="loadingOverlay">
     <div class="loading-spinner"></div>
@@ -569,43 +601,43 @@
 
         <ul class="nav-menu">
             <li class="nav-item">
-                <a href="#" class="nav-link active" data-page="dashboard">
+                <a href="dashboard.html" class="nav-link active">
                     <i class="fas fa-tachometer-alt"></i>
                     <span>الرئيسية</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a href="#" class="nav-link" data-page="students">
+                <a href="students.html" class="nav-link">
                     <i class="fas fa-users"></i>
                     <span>الطلاب</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a href="#" class="nav-link" data-page="trainers">
+                <a href="trainers.html" class="nav-link">
                     <i class="fas fa-chalkboard-user"></i>
                     <span>المدربين</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a href="#" class="nav-link" data-page="schedule">
+                <a href="schedule.html" class="nav-link">
                     <i class="fas fa-calendar-alt"></i>
                     <span>الجدول</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a href="#" class="nav-link" data-page="payments">
+                <a href="payments.html" class="nav-link">
                     <i class="fas fa-money-bill-wave"></i>
                     <span>المدفوعات</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a href="#" class="nav-link" data-page="reports">
+                <a href="reports.html" class="nav-link">
                     <i class="fas fa-chart-line"></i>
                     <span>التقارير</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a href="#" class="nav-link" data-page="settings">
+                <a href="settings.html" class="nav-link">
                     <i class="fas fa-cog"></i>
                     <span>الإعدادات</span>
                 </a>
@@ -698,7 +730,7 @@
             <div class="recent-card">
                 <div class="recent-header">
                     <h3><i class="fas fa-clock"></i> أحدث المدفوعات</h3>
-                    <a href="#" data-page="payments">عرض الكل <i class="fas fa-arrow-left"></i></a>
+                    <a href="payments.html">عرض الكل <i class="fas fa-arrow-left"></i></a>
                 </div>
                 <div class="activity-table">
                     <table id="recentPaymentsTable">
@@ -724,6 +756,40 @@
     
     // Get user from session storage
     let currentUser = null;
+
+    // Toast Notification
+    function showToast(message, type = 'info') {
+        const container = document.getElementById('toastContainer');
+        const icons = { success: 'fa-check-circle', error: 'fa-exclamation-circle', warning: 'fa-exclamation-triangle', info: 'fa-info-circle' };
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.innerHTML = `<i class="fas ${icons[type] || icons.info}"></i><span>${message}</span>`;
+        container.appendChild(toast);
+        setTimeout(() => toast.remove(), 4000);
+    }
+
+    // Centralized API Call
+    async function apiCall(action, data = {}) {
+        try {
+            const response = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({ action, ...data })
+            });
+            const result = await response.json();
+            if (result.success === false) {
+                throw new Error(result.message || 'حدث خطأ غير معروف');
+            }
+            return result.data !== undefined ? result.data : result;
+        } catch (error) {
+            if (error.message && !error.message.includes('fetch')) {
+                showToast(error.message, 'error');
+            } else {
+                showToast('حدث خطأ في الاتصال بالخادم', 'error');
+            }
+            throw error;
+        }
+    }
     
     // Initialize page
     document.addEventListener('DOMContentLoaded', function() {
@@ -734,7 +800,14 @@
             return;
         }
         
-        currentUser = JSON.parse(userStr);
+        try {
+            currentUser = JSON.parse(userStr);
+        } catch (e) {
+            sessionStorage.removeItem('loggedInUser');
+            window.location.href = 'index.html';
+            return;
+        }
+        
         updateUserUI();
         
         // Load dashboard data
@@ -762,22 +835,6 @@
             window.location.href = 'index.html';
         });
         
-        // Navigation links
-        document.querySelectorAll('.nav-link').forEach(link => {
-            link.addEventListener('click', function(e) {
-                e.preventDefault();
-                const page = this.dataset.page;
-                if (page) {
-                    // Update active state
-                    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-                    this.classList.add('active');
-                    
-                    // Redirect with page parameter
-                    window.location.href = page + '.html';
-                }
-            });
-        });
-        
         // Close sidebar when clicking outside on mobile
         document.addEventListener('click', function(e) {
             const sidebar = document.getElementById('sidebar');
@@ -795,35 +852,20 @@
         
         try {
             // Fetch financial summary
-            const summaryResponse = await fetch(SCRIPT_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body: JSON.stringify({ action: 'getFinancialSummary' })
-            });
-            const summary = await summaryResponse.json();
+            const summary = await apiCall('getFinancialSummary');
             updateStats(summary);
             
             // Fetch recent payments
-            const paymentsResponse = await fetch(SCRIPT_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body: JSON.stringify({ action: 'getAllPayments' })
-            });
-            const payments = await paymentsResponse.json();
+            const payments = await apiCall('getAllPayments');
             updateRecentPayments(payments);
             
             // Fetch students for department chart
-            const studentsResponse = await fetch(SCRIPT_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body: JSON.stringify({ action: 'getAllStudents' })
-            });
-            const students = await studentsResponse.json();
+            const students = await apiCall('getAllStudents');
             updateDepartmentChart(students);
             
         } catch (error) {
             console.error('Error:', error);
-            showDemoData();
+            // Error is handled in apiCall via showToast
         }
         
         showLoading(false);
@@ -836,14 +878,6 @@
         document.getElementById('totalRevenue').textContent = (data.totalPaid || 0).toLocaleString() + ' ج.م';
         
         // Initialize revenue chart with demo data
-        initRevenueChart();
-    }
-    
-    function showDemoData() {
-        document.getElementById('totalStudents').textContent = '28';
-        document.getElementById('totalTrainers').textContent = '8';
-        document.getElementById('totalBookings').textContent = '24';
-        document.getElementById('totalRevenue').textContent = '24,500 ج.م';
         initRevenueChart();
     }
     
@@ -894,30 +928,6 @@
                 labels: ['تقنية المعلومات (IT)', 'اللغات (LANG)', 'إدارة الأعمال (BUS)', 'التصميم (GD)'],
                 datasets: [{
                     data: [deptCounts['IT'], deptCounts['LANG'], deptCounts['BUS'], deptCounts['GD']],
-                    backgroundColor: ['#3c6ec8', '#f4a261', '#2ecc71', '#e74c3c'],
-                    borderWidth: 0
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: { position: 'bottom', rtl: true }
-                }
-            }
-        });
-    }
-    
-    function updateDepartmentChartDemo() {
-        const ctx = document.getElementById('deptChart').getContext('2d');
-        if (deptChart) deptChart.destroy();
-        
-        deptChart = new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: ['تقنية المعلومات (IT)', 'اللغات (LANG)', 'إدارة الأعمال (BUS)', 'التصميم (GD)'],
-                datasets: [{
-                    data: [14, 8, 4, 2],
                     backgroundColor: ['#3c6ec8', '#f4a261', '#2ecc71', '#e74c3c'],
                     borderWidth: 0
                 }]
