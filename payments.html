@@ -706,7 +706,7 @@
             link.addEventListener('click', function(e) {
                 e.preventDefault();
                 const page = this.dataset.page;
-                if (page) window.location.href = window.location.href.split('?')[0] + '?page=' + page;
+                if (page) window.location.href = page + '.html';
             });
         });
         
@@ -728,14 +728,14 @@
         try {
             const paymentsResponse = await fetch(SCRIPT_URL, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                 body: JSON.stringify({ action: 'getAllPayments' })
             });
             allPayments = await paymentsResponse.json();
             
             const studentsResponse = await fetch(SCRIPT_URL, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                 body: JSON.stringify({ action: 'getAllStudents' })
             });
             allStudents = await studentsResponse.json();
@@ -909,7 +909,7 @@
         try {
             const response = await fetch(SCRIPT_URL, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                 body: JSON.stringify({ action: 'savePayment', data: paymentData })
             });
             const result = await response.json();
@@ -933,7 +933,7 @@
             try {
                 const response = await fetch(SCRIPT_URL, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                     body: JSON.stringify({ action: 'deletePayment', id: id })
                 });
                 const result = await response.json();
