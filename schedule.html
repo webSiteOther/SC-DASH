@@ -566,52 +566,38 @@
         </header>
 
         <div class="content-area">
-            <!-- View Toggle -->
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 20px;">
-                <div class="view-toggle">
-                    <button class="view-btn active" id="weeklyViewBtn"><i class="fas fa-calendar-week"></i> عرض أسبوعي</button>
-                    <button class="view-btn" id="monthlyViewBtn"><i class="fas fa-calendar-alt"></i> عرض شهري</button>
-                </div>
-                <button class="btn-add-booking" id="addBookingBtn"><i class="fas fa-plus"></i> حجز جديد</button>
-            </div>
-
             <!-- Filter Bar -->
-            <div class="filter-bar">
-                <div class="filter-group">
-                    <label><i class="fas fa-building"></i> القاعة</label>
-                    <select id="hallFilter">
+            <div class="filter-bar" style="display: flex; gap: 15px; background: white; padding: 20px; border-radius: 16px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); align-items: flex-end; flex-wrap: wrap;">
+                <div class="filter-group" style="flex: 1; min-width: 200px;">
+                    <label style="display: block; margin-bottom: 8px; color: var(--gray); font-size: 13px;"><i class="fas fa-building"></i> تصفية بالقاعة</label>
+                    <select id="hallFilter" style="width: 100%; padding: 12px; border: 2px solid #e9ecef; border-radius: 10px;">
                         <option value="all">كل القاعات</option>
                     </select>
                 </div>
-                <div class="filter-group">
-                    <label><i class="fas fa-chalkboard-user"></i> المدرب</label>
-                    <select id="trainerFilter">
+                <div class="filter-group" style="flex: 1; min-width: 200px;">
+                    <label style="display: block; margin-bottom: 8px; color: var(--gray); font-size: 13px;"><i class="fas fa-chalkboard-user"></i> تصفية بالمدرب</label>
+                    <select id="trainerFilter" style="width: 100%; padding: 12px; border: 2px solid #e9ecef; border-radius: 10px;">
                         <option value="all">كل المدربين</option>
                     </select>
                 </div>
-                <div class="filter-group">
-                    <label><i class="fas fa-calendar-day"></i> الأسبوع</label>
-                    <input type="week" id="weekPicker">
-                </div>
-                <button class="btn-filter" id="applyFilterBtn"><i class="fas fa-filter"></i> تطبيق</button>
+                <button id="applyFilterBtn" style="padding: 12px 24px; background: var(--primary-blue); color: white; border: none; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-weight: bold;"><i class="fas fa-filter"></i> تطبيق التصفية</button>
+                <button id="addBookingBtn" style="padding: 12px 24px; background: var(--success); color: white; border: none; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-weight: bold; margin-right: auto;"><i class="fas fa-plus"></i> حجز جديد</button>
             </div>
 
-            <!-- Weekly Grid View -->
-            <div id="weeklyView" class="weekly-grid">
-                <table class="weekly-table" id="weeklyTable">
-                    <thead id="weeklyHeader"></thead>
-                    <tbody id="weeklyBody"></tbody>
+            <!-- Board View -->
+            <div class="board-container" style="background: white; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; min-width: 1000px;" id="scheduleBoard">
+                    <thead id="boardHeader">
+                        <!-- Headers injected via JS -->
+                    </thead>
+                    <tbody id="boardBody">
+                        <!-- Rows injected via JS -->
+                    </tbody>
                 </table>
-            </div>
-
-            <!-- Monthly Calendar View -->
-            <div id="monthlyView" class="calendar-container" style="display: none;">
-                <div id="calendar"></div>
             </div>
         </div>
     </main>
 </div>
-
 <!-- Booking Modal -->
 <div class="modal" id="bookingModal">
     <div class="modal-content">
@@ -752,9 +738,8 @@
         return isValid;
     }
 
-    const daysOfWeek = ['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'];
-    const daysNames = { Saturday: 'السبت', Sunday: 'الأحد', Monday: 'الاثنين', Tuesday: 'الثلاثاء', Wednesday: 'الأربعاء', Thursday: 'الخميس' };
-    const timeSlots = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00'];
+    const daysOfWeek = ['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+    const daysNames = { Saturday: 'السبت', Sunday: 'الأحد', Monday: 'الاثنين', Tuesday: 'الثلاثاء', Wednesday: 'الأربعاء', Thursday: 'الخميس', Friday: 'الجمعة' };
 
     document.addEventListener('DOMContentLoaded', function() {
         const userStr = sessionStorage.getItem('loggedInUser');
@@ -771,12 +756,6 @@
         updateUserUI();
         setupEventListeners();
         loadData();
-        
-        // Set default week picker to current week
-        const today = new Date();
-        const year = today.getFullYear();
-        const week = Math.ceil((((today - new Date(year, 0, 1)) / 86400000) + 1) / 7);
-        document.getElementById('weekPicker').value = `${year}-W${week.toString().padStart(2, '0')}`;
     });
 
     function updateUserUI() {
@@ -789,9 +768,7 @@
         document.getElementById('menuToggle').addEventListener('click', () => document.getElementById('sidebar').classList.toggle('open'));
         document.getElementById('logoutBtn').addEventListener('click', () => { sessionStorage.removeItem('loggedInUser'); window.location.href = 'index.html'; });
         
-        document.getElementById('weeklyViewBtn').addEventListener('click', () => switchView('weekly'));
-        document.getElementById('monthlyViewBtn').addEventListener('click', () => switchView('monthly'));
-        document.getElementById('applyFilterBtn').addEventListener('click', () => renderCurrentView());
+        document.getElementById('applyFilterBtn').addEventListener('click', () => renderBoard());
         document.getElementById('addBookingBtn').addEventListener('click', () => openAddModal());
         document.getElementById('closeModal').addEventListener('click', () => closeModal());
         document.getElementById('cancelModal').addEventListener('click', () => closeModal());
@@ -818,7 +795,7 @@
             allFloors = fRes || [];
             
             updateFilters();
-            renderCurrentView();
+            renderBoard();
         } catch(e) {}
         showLoading(false);
     }
@@ -851,28 +828,6 @@
         });
     }
 
-    function switchView(view) {
-        currentView = view;
-        if (view === 'weekly') {
-            document.getElementById('weeklyViewBtn').classList.add('active');
-            document.getElementById('monthlyViewBtn').classList.remove('active');
-            document.getElementById('weeklyView').style.display = 'block';
-            document.getElementById('monthlyView').style.display = 'none';
-            renderWeeklyView();
-        } else {
-            document.getElementById('monthlyViewBtn').classList.add('active');
-            document.getElementById('weeklyViewBtn').classList.remove('active');
-            document.getElementById('weeklyView').style.display = 'none';
-            document.getElementById('monthlyView').style.display = 'block';
-            renderMonthlyView();
-        }
-    }
-
-    function renderCurrentView() {
-        if (currentView === 'weekly') renderWeeklyView();
-        else renderMonthlyView();
-    }
-
     function getVisibleFloors() {
         let allowed = currentUser.allowedFloors || '*';
         if (allowed === '*') return allFloors;
@@ -880,118 +835,99 @@
         return allFloors.filter(f => allowedIds.includes(f.id));
     }
 
-    function renderWeeklyView() {
+    function renderBoard() {
         const hallFilter = document.getElementById('hallFilter').value;
         const trainerFilter = document.getElementById('trainerFilter').value;
-        
         const visibleFloors = getVisibleFloors();
         
-        let filtered = [...allBookings];
-        // Filter based on allowed floors
-        filtered = filtered.filter(b => {
+        let filteredBookings = [...allBookings];
+        // Filter out bookings for floors user doesn't have access to
+        filteredBookings = filteredBookings.filter(b => {
             const hall = allHalls.find(h => h.id == b.hallId);
             return hall && visibleFloors.some(f => f.id == hall.floorNumber);
         });
         
-        if (hallFilter !== 'all') filtered = filtered.filter(b => b.hallId == hallFilter);
-        if (trainerFilter !== 'all') filtered = filtered.filter(b => b.trainerId == trainerFilter);
+        if (hallFilter !== 'all') filteredBookings = filteredBookings.filter(b => b.hallId == hallFilter);
+        if (trainerFilter !== 'all') filteredBookings = filteredBookings.filter(b => b.trainerId == trainerFilter);
         
-        const header = document.getElementById('weeklyHeader');
-        const body = document.getElementById('weeklyBody');
+        const header = document.getElementById('boardHeader');
+        const body = document.getElementById('boardBody');
         
-        header.innerHTML = '<th>الوقت / اليوم</th>' + daysOfWeek.map(day => `<th>${daysNames[day]}</th>`).join('');
+        // Render Header (Days)
+        let headerHtml = `<tr>
+            <th style="padding: 15px; background: var(--dark-blue); color: white; border: 1px solid #dee2e6; width: 120px; position: sticky; right: 0; z-index: 10;">الدور / القاعات</th>
+        `;
+        for (let day of daysOfWeek) {
+            headerHtml += `<th style="padding: 15px; background: var(--dark-blue); color: white; border: 1px solid #dee2e6; text-align: center; min-width: 250px;">${daysNames[day]}</th>`;
+        }
+        headerHtml += `</tr>`;
+        header.innerHTML = headerHtml;
         
-        let rows = '';
-        for (let time of timeSlots) {
-            let cells = `<td style="background: var(--light-gray); font-weight: 600; text-align: center; vertical-align: middle;">${time}</td>`;
-            for (let day of daysOfWeek) {
-                let cellContent = '';
+        // Render Body (Floors)
+        let bodyHtml = '';
+        if (visibleFloors.length === 0) {
+            bodyHtml = `<tr><td colspan="8" style="text-align: center; padding: 50px; color: var(--gray);">ليس لديك صلاحية لرؤية أي قاعات أو أدوار.</td></tr>`;
+        } else {
+            for (let floor of visibleFloors) {
+                let rowHtml = `<tr>
+                    <td style="padding: 15px; background: #f8f9fa; border: 1px solid #dee2e6; font-weight: bold; text-align: center; position: sticky; right: 0; z-index: 9; box-shadow: -2px 0 5px rgba(0,0,0,0.02);">
+                        <div style="font-size: 16px; color: var(--primary-blue);">${floor.name}</div>
+                    </td>
+                `;
                 
-                // Group bookings by floor
-                for (let floor of visibleFloors) {
-                    const floorBookings = filtered.filter(b => {
+                for (let day of daysOfWeek) {
+                    // Get all bookings for this floor and this day
+                    let dayBookings = filteredBookings.filter(b => {
                         const hall = allHalls.find(h => h.id == b.hallId);
-                        return b.day === day && b.startTime <= time && b.endTime > time && hall && hall.floorNumber == floor.id;
+                        return b.day === day && hall && hall.floorNumber == floor.id;
                     });
                     
-                    if (floorBookings.length > 0) {
-                        const bookingsHtml = floorBookings.map(booking => {
+                    // Sort bookings by start time
+                    dayBookings.sort((a, b) => a.startTime.localeCompare(b.startTime));
+                    
+                    let cellContent = '';
+                    if (dayBookings.length > 0) {
+                        cellContent = `<div style="display: flex; flex-direction: column; gap: 10px;">`;
+                        for (let booking of dayBookings) {
                             const trainer = allTrainers.find(t => t.id === booking.trainerId);
                             const hall = allHalls.find(h => h.id === booking.hallId);
                             const group = allGroups.find(g => g.id === booking.groupId);
-                            const conflictClass = booking.conflict === 'CONFLICT' ? 'conflict' : '';
-                            return `
-                                <div class="booking-slot ${conflictClass}" onclick="editBooking(${booking.id})" style="margin-bottom: 4px; padding: 4px; font-size: 11px;">
-                                    <div style="font-weight: bold;">${hall?.name || ''}</div>
-                                    <div class="booking-trainer">${trainer?.name || 'مدرب'}</div>
-                                    <div class="booking-group">${group?.name || 'جروب'}</div>
+                            const isConflict = booking.conflict === 'CONFLICT';
+                            
+                            const cardStyle = isConflict 
+                                ? "background: #fff5f5; border-right: 4px solid var(--danger); padding: 12px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); cursor: pointer; transition: transform 0.2s;"
+                                : "background: #f8faff; border-right: 4px solid var(--primary-blue); padding: 12px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); cursor: pointer; transition: transform 0.2s;";
+                            
+                            cellContent += `
+                                <div style="${cardStyle}" onclick="editBooking(${booking.id})" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                        <span style="font-size: 14px; font-weight: bold; color: ${isConflict ? 'var(--danger)' : 'var(--dark-blue)'};"><i class="far fa-clock"></i> ${booking.startTime} - ${booking.endTime}</span>
+                                        <span style="font-size: 12px; background: ${isConflict ? '#fee2e2' : '#e0e7ff'}; color: ${isConflict ? '#991b1b' : '#3730a3'}; padding: 3px 8px; border-radius: 12px; font-weight: bold;">${hall?.name || 'قاعة غير محددة'}</span>
+                                    </div>
+                                    <div style="font-size: 13px; color: var(--dark); margin-bottom: 4px;"><i class="fas fa-chalkboard-user" style="color: var(--gray); width: 16px;"></i> المدرب: <strong>${trainer?.name || 'غير محدد'}</strong></div>
+                                    <div style="font-size: 13px; color: var(--dark);"><i class="fas fa-users" style="color: var(--gray); width: 16px;"></i> الجروب: <strong>${group?.name || 'بدون جروب'}</strong></div>
                                 </div>
                             `;
-                        }).join('');
-                        
-                        cellContent += `
-                            <div style="border-bottom: 1px solid #dee2e6; padding-bottom: 5px; margin-bottom: 5px;">
-                                <div style="font-size: 10px; color: var(--gray); text-align: right; margin-bottom: 3px;">${floor.name}</div>
-                                ${bookingsHtml}
-                            </div>
-                        `;
+                        }
+                        cellContent += `</div>`;
                     }
+                    
+                    // Add an "Add" button at the bottom of the cell
+                    cellContent += `
+                        <div style="margin-top: 15px; text-align: center;">
+                            <button onclick="openAddModalAtSlot('${day}', '${floor.id}')" style="background: transparent; border: 1px dashed #ccc; color: var(--gray); padding: 8px; width: 100%; border-radius: 8px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#f8f9fa'; this.style.borderColor='var(--primary-blue)'; this.style.color='var(--primary-blue)';" onmouseout="this.style.background='transparent'; this.style.borderColor='#ccc'; this.style.color='var(--gray)';">
+                                <i class="fas fa-plus"></i> إضافة حجز
+                            </button>
+                        </div>
+                    `;
+                    
+                    rowHtml += `<td style="padding: 15px; border: 1px solid #dee2e6; vertical-align: top; background: white;">${cellContent}</td>`;
                 }
-                
-                if (!cellContent) {
-                    cells += `<td onclick="openAddModalAtSlot('${day}', '${time}')" style="cursor: pointer; background: rgba(0,0,0,0.02);"></td>`;
-                } else {
-                    cells += `<td style="vertical-align: top;">${cellContent}<div style="text-align: center; margin-top: 5px;"><button class="btn-icon" style="background: #f8f9fa; color: #6c757d; padding: 2px 5px;" onclick="openAddModalAtSlot('${day}', '${time}')"><i class="fas fa-plus"></i></button></div></td>`;
-                }
+                rowHtml += `</tr>`;
+                bodyHtml += rowHtml;
             }
-            rows += `<tr>${cells}</tr>`;
         }
-        body.innerHTML = rows;
-    }
-
-    function renderMonthlyView() {
-        if (calendar) calendar.destroy();
-        
-        const events = allBookings.map(booking => {
-            const trainer = allTrainers.find(t => t.id === booking.trainerId);
-            const hall = allHalls.find(h => h.id === booking.hallId);
-            const group = allGroups.find(g => g.id === booking.groupId);
-            return {
-                title: `${trainer?.name || ''} - ${hall?.name || ''}`,
-                start: getDateFromDay(booking.day, booking.startTime),
-                end: getDateFromDay(booking.day, booking.endTime),
-                extendedProps: { booking: booking },
-                color: booking.conflict === 'CONFLICT' ? '#e74c3c' : '#3c6ec8'
-            };
-        });
-        
-        const calendarEl = document.getElementById('calendar');
-        calendar = new FullCalendar.Calendar(calendarEl, {
-            locale: 'ar',
-            initialView: 'dayGridMonth',
-            headerToolbar: { left: 'prev,next', center: 'title', right: 'today' },
-            events: events,
-            eventClick: function(info) {
-                editBooking(info.event.extendedProps.booking.id);
-            },
-            height: 'auto'
-        });
-        calendar.render();
-    }
-
-    function getDateFromDay(day, time) {
-        const daysMap = { Saturday: 6, Sunday: 0, Monday: 1, Tuesday: 2, Wednesday: 3, Thursday: 4 };
-        const today = new Date();
-        const currentDay = today.getDay();
-        let targetDay = daysMap[day];
-        if (targetDay === undefined) targetDay = 0;
-        let diff = targetDay - currentDay;
-        if (diff < 0) diff += 7;
-        const date = new Date(today);
-        date.setDate(today.getDate() + diff);
-        const [hours, minutes] = time.split(':');
-        date.setHours(parseInt(hours), parseInt(minutes), 0);
-        return date;
+        body.innerHTML = bodyHtml;
     }
 
     function openAddModal() {
@@ -1002,14 +938,18 @@
         document.getElementById('bookingModal').classList.add('show');
     }
 
-    function openAddModalAtSlot(day, time) {
+    function openAddModalAtSlot(day, floorId) {
         document.getElementById('modalTitle').textContent = 'حجز جديد';
         document.getElementById('bookingForm').reset();
         document.getElementById('bookingId').value = '';
         document.getElementById('bookingDay').value = day;
-        document.getElementById('startTime').value = time;
-        const nextHour = (parseInt(time) + 1).toString().padStart(2, '0') + ':00';
-        document.getElementById('endTime').value = nextHour;
+        
+        // Auto-select first hall in this floor
+        const floorHalls = allHalls.filter(h => h.floorNumber == floorId);
+        if (floorHalls.length > 0) {
+            document.getElementById('hallId').value = floorHalls[0].id;
+        }
+        
         document.getElementById('deleteBookingBtn').style.display = 'none';
         document.getElementById('bookingModal').classList.add('show');
     }
@@ -1062,9 +1002,7 @@
             showToast('تم حفظ الحجز بنجاح', 'success');
             closeModal();
             loadData();
-        } catch(e) { 
-            // Error handled in apiCall
-        }
+        } catch(e) {}
         showLoading(false);
     }
 
@@ -1078,9 +1016,7 @@
                 showToast('تم حذف الحجز بنجاح', 'success');
                 closeModal();
                 loadData();
-            } catch(e) { 
-                // Error handled in apiCall
-            }
+            } catch(e) {}
             showLoading(false);
         }
     }
