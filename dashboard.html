@@ -716,6 +716,9 @@
 </div>
 
 <script>
+    // الرابط الجديد لـ Google Apps Script
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxOlbPXo97sbdQA9tny8aRZpx64jxNzZ4_NcHwmXVFnyw_7giNmavJcWaf84oW5KCDgpQ/exec';
+    
     // Global variables for charts
     let deptChart, revenueChart;
     
@@ -789,43 +792,43 @@
     }
     
     async function loadDashboardData() {
-    showLoading(true);
-    
-    try {
-        // Fetch financial summary
-        const summaryResponse = await fetch('https://script.google.com/macros/s/AKfycbxOlbPXo97sbdQA9tny8aRZpx64jxNzZ4_NcHwmXVFnyw_7giNmavJcWaf84oW5KCDgpQ/exec', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'getFinancialSummary' })
-        });
-        const summary = await summaryResponse.json();
-        updateStats(summary);
+        showLoading(true);
         
-        // Fetch recent payments
-        const paymentsResponse = await fetch('https://script.google.com/macros/s/AKfycbxOlbPXo97sbdQA9tny8aRZpx64jxNzZ4_NcHwmXVFnyw_7giNmavJcWaf84oW5KCDgpQ/exec', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'getAllPayments' })
-        });
-        const payments = await paymentsResponse.json();
-        updateRecentPayments(payments);
+        try {
+            // Fetch financial summary
+            const summaryResponse = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'getFinancialSummary' })
+            });
+            const summary = await summaryResponse.json();
+            updateStats(summary);
+            
+            // Fetch recent payments
+            const paymentsResponse = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'getAllPayments' })
+            });
+            const payments = await paymentsResponse.json();
+            updateRecentPayments(payments);
+            
+            // Fetch students for department chart
+            const studentsResponse = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'getAllStudents' })
+            });
+            const students = await studentsResponse.json();
+            updateDepartmentChart(students);
+            
+        } catch (error) {
+            console.error('Error:', error);
+            showDemoData();
+        }
         
-        // Fetch students for department chart
-        const studentsResponse = await fetch('https://script.google.com/macros/s/AKfycbxOlbPXo97sbdQA9tny8aRZpx64jxNzZ4_NcHwmXVFnyw_7giNmavJcWaf84oW5KCDgpQ/exec', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'getAllStudents' })
-        });
-        const students = await studentsResponse.json();
-        updateDepartmentChart(students);
-        
-    } catch (error) {
-        console.error('Error:', error);
-        showDemoData();
+        showLoading(false);
     }
-    
-    showLoading(false);
-}
     
     function updateStats(data) {
         document.getElementById('totalStudents').textContent = data.studentCount || 0;
@@ -969,16 +972,7 @@
             overlay.classList.remove('show');
         }
     }
-    
-    // Add getAllPayments function if not exists in Apps Script
-    // This is a placeholder - you'll need to add this to your Apps Script
-    function getAllPayments() {
-        // This will be called from Apps Script
-        return [];
-    }
 </script>
-
-<!-- Google Apps Script API -->
 
 </body>
 </html>
