@@ -461,7 +461,9 @@
     </div>
 
     <script>
-        // الرابط الجديد لـ Google Apps Script
+        // IMPORTANT: Replace this URL with your Google Apps Script Web App URL after deployment
+        // To get this URL: In your code.gs file, click Deploy -> New deployment -> Web app -> Deploy
+        // Then copy the URL (it looks like: https://script.google.com/macros/s/.../exec)
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxOlbPXo97sbdQA9tny8aRZpx64jxNzZ4_NcHwmXVFnyw_7giNmavJcWaf84oW5KCDgpQ/exec';
 
         // Fill credentials function for demo cards
@@ -471,7 +473,7 @@
             document.getElementById('username').focus();
         }
 
-        // Handle login form submission
+        // Handle login form submission using Google Apps Script Web App API
         document.getElementById('loginForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
@@ -493,14 +495,15 @@
             errorDiv.classList.remove('show');
             
             try {
-                // Call the Google Apps Script using fetch() بدلاً من google.script.run
+                // Call the Google Apps Script Web App using POST method
                 const response = await fetch(SCRIPT_URL, {
                     method: 'POST',
+                    mode: 'cors',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        action: 'verifyLogin',
+                        action: 'login',
                         username: username,
                         password: password
                     })
@@ -510,8 +513,8 @@
                 handleLoginResponse(result);
                 
             } catch (error) {
-                console.error('Error:', error);
-                showError('حدث خطأ في الاتصال. الرجاء المحاولة مرة أخرى.');
+                console.error('Connection error:', error);
+                showError('حدث خطأ في الاتصال بالخادم. الرجاء المحاولة مرة أخرى.');
                 resetLoginButton();
             }
             
