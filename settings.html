@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Scientific Center | إدارة الطلاب</title>
+    <title>Scientific Center | الإعدادات</title>
     
     <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -608,6 +608,37 @@
             to { transform: rotate(360deg); }
         }
 
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .toast {
+            padding: 14px 24px;
+            border-radius: 14px;
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: toastIn 0.3s ease, toastOut 0.3s ease 3.7s forwards;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            max-width: 400px;
+            font-family: inherit;
+        }
+        .toast-success { background: linear-gradient(135deg, #2ecc71, #27ae60); }
+        .toast-error { background: linear-gradient(135deg, #e74c3c, #c0392b); }
+        .toast-warning { background: linear-gradient(135deg, #f39c12, #e67e22); }
+        .toast-info { background: linear-gradient(135deg, #3498db, #2980b9); }
+        @keyframes toastIn { from { opacity: 0; transform: translateX(-30px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes toastOut { from { opacity: 1; } to { opacity: 0; transform: translateX(-30px); } }
+
         .empty-state {
             text-align: center;
             padding: 50px;
@@ -656,6 +687,7 @@
     </style>
 </head>
 <body>
+<div class="toast-container" id="toastContainer"></div>
 
 <div class="loading-overlay" id="loadingOverlay">
     <div class="loading-spinner"></div>
@@ -682,43 +714,43 @@
 
         <ul class="nav-menu">
             <li class="nav-item">
-                <a href="#" class="nav-link" data-page="dashboard">
+                <a href="dashboard.html" class="nav-link">
                     <i class="fas fa-tachometer-alt"></i>
                     <span>الرئيسية</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a href="#" class="nav-link active" data-page="users">
+                <a href="students.html" class="nav-link">
                     <i class="fas fa-users"></i>
                     <span>الطلاب</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a href="#" class="nav-link" data-page="users">
+                <a href="trainers.html" class="nav-link">
                     <i class="fas fa-chalkboard-user"></i>
                     <span>المدربين</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a href="#" class="nav-link" data-page="schedule">
+                <a href="schedule.html" class="nav-link">
                     <i class="fas fa-calendar-alt"></i>
                     <span>الجدول</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a href="#" class="nav-link" data-page="payments">
+                <a href="payments.html" class="nav-link">
                     <i class="fas fa-money-bill-wave"></i>
                     <span>المدفوعات</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a href="#" class="nav-link" data-page="reports">
+                <a href="reports.html" class="nav-link">
                     <i class="fas fa-chart-line"></i>
                     <span>التقارير</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a href="#" class="nav-link" data-page="settings">
+                <a href="settings.html" class="nav-link active">
                     <i class="fas fa-cog"></i>
                     <span>الإعدادات</span>
                 </a>
@@ -733,8 +765,8 @@
                 <i class="fas fa-bars"></i>
             </button>
             <div class="page-title">
-                <h2>إدارة المدربين</h2>
-                <p>إضافة، تعديل، بحث وحذف المدربين</p>
+                <h2>إدارة المستخدمين</h2>
+                <p>إضافة، تعديل، بحث وحذف المستخدمين</p>
             </div>
             <div class="header-actions">
                 <button class="logout-btn" id="logoutBtn">
@@ -753,7 +785,7 @@
                 </div>
                 <button class="btn-add" id="adduserBtn">
                     <i class="fas fa-plus"></i>
-                    <span>إضافة مدرب جديد</span>
+                    <span>إضافة مستخدم جديد</span>
                 </button>
             </div>
 
@@ -775,7 +807,7 @@
                     </thead>
                     <tbody id="usersTableBody">
                         <tr>
-                            <td colspan="9" style="text-align: center;">جاري التحميل...<\/td>
+                            <td colspan="7" style="text-align: center;">جاري التحميل...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -791,7 +823,7 @@
 <div class="modal" id="userModal">
     <div class="modal-content">
         <div class="modal-header">
-            <h3 id="modalTitle">إضافة مدرب جديد</h3>
+            <h3 id="modalTitle">إضافة مستخدم جديد</h3>
             <button class="close-modal" id="closeModal">&times;</button>
         </div>
         <div class="modal-body">
@@ -852,10 +884,79 @@
     
     let currentUser = null;
     let allusers = [];
-    let departments = [];
-    let groups = [];
     let currentPage = 1;
     const rowsPerPage = 10;
+    
+    // Toast Notification
+    function showToast(message, type = 'info') {
+        const container = document.getElementById('toastContainer');
+        const icons = { success: 'fa-check-circle', error: 'fa-exclamation-circle', warning: 'fa-exclamation-triangle', info: 'fa-info-circle' };
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.innerHTML = `<i class="fas ${icons[type] || icons.info}"></i><span>${message}</span>`;
+        container.appendChild(toast);
+        setTimeout(() => toast.remove(), 4000);
+    }
+
+    // Centralized API Call
+    async function apiCall(action, data = {}) {
+        try {
+            const response = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({ action, ...data })
+            });
+            const result = await response.json();
+            if (result.success === false) {
+                throw new Error(result.message || 'حدث خطأ غير معروف');
+            }
+            return result.data !== undefined ? result.data : result;
+        } catch (error) {
+            if (error.message && !error.message.includes('fetch')) {
+                showToast(error.message, 'error');
+            } else {
+                showToast('حدث خطأ في الاتصال بالخادم', 'error');
+            }
+            throw error;
+        }
+    }
+
+    // Form Validation
+    const Validators = {
+        required: (val) => val !== null && val !== undefined && String(val).trim() !== '',
+    };
+
+    function validateForm(rules) {
+        let isValid = true;
+        for (const [fieldId, checks] of Object.entries(rules)) {
+            const el = document.getElementById(fieldId);
+            if (!el) continue;
+            const val = el.value;
+            let fieldValid = true;
+            for (const check of checks) {
+                if (!check.fn(val)) {
+                    fieldValid = false;
+                    el.style.borderColor = 'var(--danger)';
+                    let errEl = el.parentElement.querySelector('.field-error');
+                    if (!errEl) {
+                        errEl = document.createElement('div');
+                        errEl.className = 'field-error';
+                        errEl.style.cssText = 'color: var(--danger); font-size: 11px; margin-top: 4px;';
+                        el.parentElement.appendChild(errEl);
+                    }
+                    errEl.textContent = check.msg;
+                    isValid = false;
+                    break;
+                }
+            }
+            if (fieldValid) {
+                el.style.borderColor = '#e9ecef';
+                const errEl = el.parentElement.querySelector('.field-error');
+                if (errEl) errEl.remove();
+            }
+        }
+        return isValid;
+    }
 
     // Initialize
     document.addEventListener('DOMContentLoaded', function() {
@@ -866,7 +967,14 @@
             return;
         }
         
-        currentUser = JSON.parse(userStr);
+        try {
+            currentUser = JSON.parse(userStr);
+        } catch(e) {
+            sessionStorage.removeItem('loggedInUser');
+            window.location.href = 'index.html';
+            return;
+        }
+        
         updateUserUI();
         setupEventListeners();
         loadData();
@@ -890,26 +998,11 @@
             window.location.href = 'index.html';
         });
         
-        // Navigation
-        document.querySelectorAll('.nav-link').forEach(link => {
-            link.addEventListener('click', function(e) {
-                e.preventDefault();
-                const page = this.dataset.page;
-                if (page) {
-                    window.location.href = page + '.html';
-                }
-            });
-        });
-        
         // Search
         document.getElementById('searchBtn').addEventListener('click', () => searchusers());
         document.getElementById('searchInput').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') searchusers();
         });
-        
-        // Filters
-        document.getElementById('deptFilter').addEventListener('change', () => filterAndRender());
-        document.getElementById('groupFilter').addEventListener('change', () => filterAndRender());
         
         // Modal
         document.getElementById('adduserBtn').addEventListener('click', () => openAddModal());
@@ -926,58 +1019,14 @@
 
     async function loadData() {
         showLoading(true);
-        
         try {
-            // Load users
-            const usersResponse = await fetch(SCRIPT_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body: JSON.stringify({ action: 'getAllUsers' })
-            });
-            allusers = await usersResponse.json();
-            
+            allusers = await apiCall('getAllUsers');
             filterAndRender();
-            
         } catch (error) {
             console.error('Error:', error);
-            loadDemoData();
+            // Error handled in apiCall
         }
-        
         showLoading(false);
-    }
-    
-    function loadDemoData() {
-        allusers = [
-            {id: 1, code: "IT-1001", name: "يوسف أحمد", phone: "0101112223", school: "جامعة القاهرة", age: 22, deptId: 1, groupId: 1, createdAt: new Date(), groupName: "FSW-01"},
-            {id: 2, code: "IT-1002", name: "ليلى محمد", phone: "0101112224", school: "عين شمس", age: 21, deptId: 1, groupId: 2, createdAt: new Date(), groupName: "FSW-02"},
-            {id: 3, code: "LANG-2001", name: "عمر خالد", phone: "0101112225", school: "الجامعة الأمريكية", age: 23, deptId: 2, groupId: 3, createdAt: new Date(), groupName: "ENG-01"},
-            {id: 4, code: "BUS-3001", name: "سلمى هاني", phone: "0101112226", school: "جامعة القاهرة", age: 25, deptId: 3, groupId: 4, createdAt: new Date(), groupName: "PMP-01"},
-            {id: 5, code: "IT-1003", name: "مريم طارق", phone: "0101112227", school: "GUC", age: 20, deptId: 1, groupId: 1, createdAt: new Date(), groupName: "FSW-01"},
-        ];
-        groups = [
-            {id: 1, name: "FSW-01", courseId: 1},
-            {id: 2, name: "FSW-02", courseId: 1},
-            {id: 3, name: "ENG-01", courseId: 3},
-            {id: 4, name: "PMP-01", courseId: 4},
-        ];
-        updateGroupFilters();
-        filterAndRender();
-    }
-    
-    function updateGroupFilters() {
-        const groupFilter = document.getElementById('groupFilter');
-        const userGroup = document.getElementById('userGroup');
-        
-        let options = '<option value="all">الكل</option>';
-        let modalOptions = '<option value="">بدون جروب</option>';
-        
-        groups.forEach(g => {
-            options += `<option value="${g.id}">${g.name}</option>`;
-            modalOptions += `<option value="${g.id}">${g.name}</option>`;
-        });
-        
-        groupFilter.innerHTML = options;
-        userGroup.innerHTML = modalOptions;
     }
     
     function filterAndRender() {
@@ -1004,7 +1053,7 @@
         const tbody = document.getElementById('usersTableBody');
         
         if (!users || users.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="9" style="text-align: center;">لا توجد طلاب<\/td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">لا يوجد مستخدمين</td></tr>';
             document.getElementById('pagination').innerHTML = '';
             return;
         }
@@ -1061,7 +1110,9 @@
     function viewuser(id) {
         const user = allusers.find(s => s.id == id);
         if (user) {
-            alert(`الطالب: ${user.name}\nالكود: ${user.code}\nالهاتف: ${user.phone}\nالمدرسة: ${user.school || '-'}\nالعمر: ${user.age || '-'}`);
+            const roleNames = {1: 'مدير النظام', 2: 'محاسب', 3: 'مدير دور', 4: 'مسؤول حجوزات', 5: 'مشاهد'};
+            const roleName = roleNames[user.roleId] || 'مستخدم';
+            showToast(`المستخدم: ${user.fullName} | الهاتف: ${user.phone || '-'} | الصلاحية: ${roleName} | الحالة: ${user.isActive ? 'نشط' : 'غير نشط'}`, 'info');
         }
     }
     
@@ -1081,7 +1132,7 @@
     }
     
     function openAddModal() {
-        document.getElementById('modalTitle').textContent = 'إضافة طالب جديد';
+        document.getElementById('modalTitle').textContent = 'إضافة مستخدم جديد';
         document.getElementById('userForm').reset();
         document.getElementById('userId').value = '';
         document.getElementById('userModal').classList.add('show');
@@ -1092,54 +1143,45 @@
     }
     
     async function saveuser() {
+        const rules = {
+            userFullName: [{ fn: Validators.required, msg: 'الاسم مطلوب' }],
+            userNameInput: [{ fn: Validators.required, msg: 'اسم المستخدم مطلوب' }],
+            userRoleSelect: [{ fn: Validators.required, msg: 'الصلاحية مطلوبة' }]
+        };
+        
+        if (!validateForm(rules)) return;
+        
         const userData = {
             id: document.getElementById('userId').value || null,
             fullName: document.getElementById('userFullName').value,
             username: document.getElementById('userNameInput').value,
             password: document.getElementById('userPassword').value,
             phone: document.getElementById('userPhone').value,
-            roleId: document.getElementById('userRoleSelect').value,
+            roleId: parseInt(document.getElementById('userRoleSelect').value, 10),
             isActive: document.getElementById('userStatus').value === 'true'
         };
         
-        if (!userData.fullName || !userData.username || !userData.roleId) {
-            alert('الرجاء ملء جميع الحقول المطلوبة');
-            return;
-        }
-        
         showLoading(true);
-        
         try {
-            const response = await fetch(SCRIPT_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body: JSON.stringify({ action: 'saveUser', data: userData })
-            });
-            const result = await response.json();
+            await apiCall('saveUser', { data: userData });
+            showToast('تم حفظ بيانات المستخدم بنجاح', 'success');
             closeModal();
             loadData();
-            alert(result.message);
         } catch (error) {
-            alert('حدث خطأ: ' + error);
+            // Error handled in apiCall
         }
-        
         showLoading(false);
     }
     
     async function deleteuser(id) {
-        if (confirm('هل أنت متأكد من حذف هذا الطالب؟')) {
+        if (confirm('هل أنت متأكد من حذف هذا المستخدم؟')) {
             showLoading(true);
             try {
-                const response = await fetch(SCRIPT_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify({ action: 'deleteUser', id: id })
-                });
-                const result = await response.json();
+                await apiCall('deleteUser', { id: id });
+                showToast('تم حذف المستخدم بنجاح', 'success');
                 loadData();
-                alert(result.message);
             } catch (error) {
-                alert('حدث خطأ: ' + error);
+                // Error handled in apiCall
             }
             showLoading(false);
         }
