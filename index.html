@@ -43,7 +43,6 @@
             overflow-x: hidden;
         }
 
-        /* Background Pattern */
         body::before {
             content: '';
             position: absolute;
@@ -57,7 +56,6 @@
             pointer-events: none;
         }
 
-        /* Animated shapes */
         .shape {
             position: absolute;
             background: rgba(255,255,255,0.03);
@@ -76,7 +74,6 @@
             50% { transform: translateY(-30px) rotate(10deg); }
         }
 
-        /* Login Card */
         .login-container {
             width: 100%;
             max-width: 460px;
@@ -90,7 +87,6 @@
             border-radius: 32px;
             padding: 45px 40px;
             box-shadow: 0 25px 60px rgba(0,0,0,0.25);
-            backdrop-filter: blur(10px);
             animation: slideUp 0.6s ease-out;
         }
 
@@ -105,7 +101,6 @@
             }
         }
 
-        /* Logo Section */
         .logo-section {
             text-align: center;
             margin-bottom: 30px;
@@ -151,7 +146,6 @@
             margin-top: 5px;
         }
 
-        /* Form Styles */
         .form-group {
             margin-bottom: 25px;
         }
@@ -160,7 +154,7 @@
             display: block;
             margin-bottom: 8px;
             font-weight: 600;
-            color: var(--dark);
+            color: #333;
             font-size: 14px;
         }
 
@@ -199,7 +193,6 @@
             box-shadow: 0 0 0 4px rgba(60,110,200,0.15);
         }
 
-        /* Login Button */
         .login-btn {
             width: 100%;
             padding: 14px;
@@ -228,11 +221,6 @@
             transform: translateY(0);
         }
 
-        .login-btn i {
-            font-size: 18px;
-        }
-
-        /* Demo Credentials */
         .demo-credentials {
             margin-top: 30px;
             padding-top: 20px;
@@ -288,7 +276,6 @@
             font-family: monospace;
         }
 
-        /* Error Message */
         .error-message {
             background: #fdecea;
             color: var(--danger);
@@ -308,7 +295,6 @@
             display: flex;
         }
 
-        /* Loading State */
         .loading {
             display: none;
             text-align: center;
@@ -333,7 +319,6 @@
             to { transform: rotate(360deg); }
         }
 
-        /* Footer */
         .footer {
             text-align: center;
             margin-top: 20px;
@@ -343,25 +328,20 @@
             z-index: 10;
         }
 
-        /* Responsive */
         @media (max-width: 500px) {
             .login-card {
                 padding: 30px 25px;
             }
-            
             .logo-icon {
                 width: 70px;
                 height: 70px;
             }
-            
             .logo-icon i {
                 font-size: 35px;
             }
-            
             .logo-section h1 {
                 font-size: 24px;
             }
-            
             .demo-grid {
                 grid-template-columns: 1fr;
             }
@@ -370,7 +350,6 @@
 </head>
 <body>
 
-    <!-- Animated Background Shapes -->
     <div class="shape shape-1"></div>
     <div class="shape shape-2"></div>
     <div class="shape shape-3"></div>
@@ -378,7 +357,6 @@
 
     <div class="login-container">
         <div class="login-card">
-            <!-- Logo Section -->
             <div class="logo-section">
                 <div class="logo-icon">
                     <i class="fas fa-graduation-cap"></i>
@@ -388,13 +366,11 @@
                 <div class="arabic-name">المركز العلمي لإدارة الكورسات</div>
             </div>
 
-            <!-- Error Message -->
             <div id="errorMessage" class="error-message">
                 <i class="fas fa-exclamation-triangle"></i>
                 <span id="errorText">Invalid username or password</span>
             </div>
 
-            <!-- Login Form -->
             <form id="loginForm">
                 <div class="form-group">
                     <label><i class="fas fa-user"></i> اسم المستخدم</label>
@@ -423,7 +399,6 @@
                 </div>
             </form>
 
-            <!-- Demo Credentials -->
             <div class="demo-credentials">
                 <div class="demo-title">
                     <i class="fas fa-users" style="color: var(--gold);"></i>
@@ -461,19 +436,15 @@
     </div>
 
     <script>
-        // IMPORTANT: Replace this URL with your Google Apps Script Web App URL after deployment
-        // To get this URL: In your code.gs file, click Deploy -> New deployment -> Web app -> Deploy
-        // Then copy the URL (it looks like: https://script.google.com/macros/s/.../exec)
+        // ⚠️ IMPORTANT: Change this URL to your Google Apps Script Web App URL
+        // After deploying your code.gs as a Web App, copy the URL and paste it here
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxOlbPXo97sbdQA9tny8aRZpx64jxNzZ4_NcHwmXVFnyw_7giNmavJcWaf84oW5KCDgpQ/exec';
 
-        // Fill credentials function for demo cards
         function fillCredentials(username, password) {
             document.getElementById('username').value = username;
             document.getElementById('password').value = password;
-            document.getElementById('username').focus();
         }
 
-        // Handle login form submission using Google Apps Script Web App API
         document.getElementById('loginForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
@@ -483,53 +454,36 @@
             const loading = document.getElementById('loading');
             const errorDiv = document.getElementById('errorMessage');
             
-            // Validation
             if (!username || !password) {
                 showError('الرجاء إدخال اسم المستخدم وكلمة المرور');
                 return;
             }
             
-            // Show loading state
             loginBtn.disabled = true;
             loading.classList.add('show');
             errorDiv.classList.remove('show');
             
             try {
-                // Call the Google Apps Script Web App using POST method
-                const response = await fetch(SCRIPT_URL, {
-                    method: 'POST',
-                    mode: 'cors',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        action: 'login',
-                        username: username,
-                        password: password
-                    })
-                });
-                
+                // استخدام GET method عشان نتجنب CORS
+                const url = `${SCRIPT_URL}?action=login&username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`;
+                const response = await fetch(url);
                 const result = await response.json();
-                handleLoginResponse(result);
                 
-            } catch (error) {
-                console.error('Connection error:', error);
-                showError('حدث خطأ في الاتصال بالخادم. الرجاء المحاولة مرة أخرى.');
-                resetLoginButton();
-            }
-            
-            function handleLoginResponse(response) {
-                resetLoginButton();
-                
-                if (response.success) {
-                    // Store user data in session storage
-                    sessionStorage.setItem('loggedInUser', JSON.stringify(response.user));
-                    
-                    // Show success and redirect
-                    showSuccessAndRedirect(response.user);
+                if (result.success) {
+                    sessionStorage.setItem('loggedInUser', JSON.stringify(result.user));
+                    loginBtn.innerHTML = '<i class="fas fa-check"></i><span>تم الدخول...</span>';
+                    loginBtn.style.background = 'linear-gradient(135deg, #2ecc71, #27ae60)';
+                    setTimeout(() => {
+                        window.location.href = '?page=dashboard';
+                    }, 800);
                 } else {
-                    showError(response.message || 'اسم المستخدم أو كلمة المرور غير صحيحة');
+                    showError(result.message || 'اسم المستخدم أو كلمة المرور غير صحيحة');
+                    resetLoginButton();
                 }
+            } catch (error) {
+                console.error('Error:', error);
+                showError('حدث خطأ في الاتصال بالخادم. تأكدي من نشر الـ Web App بشكل صحيح');
+                resetLoginButton();
             }
             
             function resetLoginButton() {
@@ -544,22 +498,8 @@
                     errorDiv.classList.remove('show');
                 }, 4000);
             }
-            
-            function showSuccessAndRedirect(user) {
-                // Show success message briefly then redirect
-                const originalBtnText = loginBtn.innerHTML;
-                loginBtn.innerHTML = '<i class="fas fa-check"></i><span>تم الدخول...</span>';
-                loginBtn.style.background = 'linear-gradient(135deg, #2ecc71, #27ae60)';
-                
-                setTimeout(() => {
-                    // Redirect to dashboard
-                    const currentUrl = window.location.href.split('?')[0];
-                    window.location.href = currentUrl + '?page=dashboard';
-                }, 800);
-            }
         });
         
-        // Auto-focus on username field
         document.getElementById('username').focus();
     </script>
 </body>
