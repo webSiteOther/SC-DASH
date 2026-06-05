@@ -387,6 +387,37 @@
         }
         @keyframes spin { to { transform: rotate(360deg); } }
 
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .toast {
+            padding: 14px 24px;
+            border-radius: 14px;
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: toastIn 0.3s ease, toastOut 0.3s ease 3.7s forwards;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            max-width: 400px;
+            font-family: inherit;
+        }
+        .toast-success { background: linear-gradient(135deg, #2ecc71, #27ae60); }
+        .toast-error { background: linear-gradient(135deg, #e74c3c, #c0392b); }
+        .toast-warning { background: linear-gradient(135deg, #f39c12, #e67e22); }
+        .toast-info { background: linear-gradient(135deg, #3498db, #2980b9); }
+        @keyframes toastIn { from { opacity: 0; transform: translateX(-30px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes toastOut { from { opacity: 1; } to { opacity: 0; transform: translateX(-30px); } }
+
         /* Responsive */
         @media (max-width: 768px) {
             .sidebar {
@@ -425,6 +456,7 @@
         }</style>
 </head>
 <body>
+<div class="toast-container" id="toastContainer"></div>
 
 <div class="loading-overlay" id="loadingOverlay">
     <div class="loading-spinner"></div>
@@ -444,12 +476,48 @@
             <div class="user-role" id="userRole"></div>
         </div>
         <ul class="nav-menu">
-            <li class="nav-item"><a href="#" class="nav-link" data-page="dashboard"><i class="fas fa-tachometer-alt"></i><span>الرئيسية</span></a></li>
-            <li class="nav-item"><a href="#" class="nav-link" data-page="students"><i class="fas fa-users"></i><span>الطلاب</span></a></li>
-            <li class="nav-item"><a href="#" class="nav-link" data-page="trainers"><i class="fas fa-chalkboard-user"></i><span>المدربين</span></a></li>
-            <li class="nav-item"><a href="#" class="nav-link" data-page="schedule"><i class="fas fa-calendar-alt"></i><span>الجدول</span></a></li>
-            <li class="nav-item"><a href="#" class="nav-link" data-page="payments"><i class="fas fa-money-bill-wave"></i><span>المدفوعات</span></a></li>
-            <li class="nav-item"><a href="#" class="nav-link active" data-page="reports"><i class="fas fa-chart-line"></i><span>التقارير</span></a></li>
+            <li class="nav-item">
+                <a href="dashboard.html" class="nav-link">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>الرئيسية</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="students.html" class="nav-link">
+                    <i class="fas fa-users"></i>
+                    <span>الطلاب</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="trainers.html" class="nav-link">
+                    <i class="fas fa-chalkboard-user"></i>
+                    <span>المدربين</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="schedule.html" class="nav-link">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span>الجدول</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="payments.html" class="nav-link">
+                    <i class="fas fa-money-bill-wave"></i>
+                    <span>المدفوعات</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="reports.html" class="nav-link active">
+                    <i class="fas fa-chart-line"></i>
+                    <span>التقارير</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="settings.html" class="nav-link">
+                    <i class="fas fa-cog"></i>
+                    <span>الإعدادات</span>
+                </a>
+            </li>
         </ul>
     </aside>
 
@@ -616,11 +684,52 @@
     let allTrainers = [];
     let allBookings = [];
     let monthlyRevenueChart, paymentDistributionChart;
+    
+    // Toast Notification
+    function showToast(message, type = 'info') {
+        const container = document.getElementById('toastContainer');
+        const icons = { success: 'fa-check-circle', error: 'fa-exclamation-circle', warning: 'fa-exclamation-triangle', info: 'fa-info-circle' };
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.innerHTML = `<i class="fas ${icons[type] || icons.info}"></i><span>${message}</span>`;
+        container.appendChild(toast);
+        setTimeout(() => toast.remove(), 4000);
+    }
+
+    // Centralized API Call
+    async function apiCall(action, data = {}) {
+        try {
+            const response = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({ action, ...data })
+            });
+            const result = await response.json();
+            if (result.success === false) {
+                throw new Error(result.message || 'حدث خطأ غير معروف');
+            }
+            return result.data !== undefined ? result.data : result;
+        } catch (error) {
+            if (error.message && !error.message.includes('fetch')) {
+                showToast(error.message, 'error');
+            } else {
+                showToast('حدث خطأ في الاتصال بالخادم', 'error');
+            }
+            throw error;
+        }
+    }
 
     document.addEventListener('DOMContentLoaded', function() {
         const userStr = sessionStorage.getItem('loggedInUser');
         if (!userStr) { window.location.href = 'index.html'; return; }
-        currentUser = JSON.parse(userStr);
+        
+        try {
+            currentUser = JSON.parse(userStr);
+        } catch(e) {
+            sessionStorage.removeItem('loggedInUser');
+            window.location.href = 'index.html';
+            return;
+        }
         updateUserUI();
         setupEventListeners();
         loadData();
@@ -648,14 +757,6 @@
     function setupEventListeners() {
         document.getElementById('menuToggle').addEventListener('click', () => document.getElementById('sidebar').classList.toggle('open'));
         document.getElementById('logoutBtn').addEventListener('click', () => { sessionStorage.removeItem('loggedInUser'); window.location.href = 'index.html'; });
-        
-        document.querySelectorAll('.nav-link').forEach(link => {
-            link.addEventListener('click', function(e) {
-                e.preventDefault();
-                const page = this.dataset.page;
-                if (page) window.location.href = page + '.html';
-            });
-        });
         
         // Tab switching
         document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -688,38 +789,10 @@
     async function loadData() {
         showLoading(true);
         try {
-            const studentsResponse = await fetch(SCRIPT_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body: JSON.stringify({ action: 'getAllStudents' })
-            });
-            allStudents = await studentsResponse.json();
-            
-            const paymentsResponse = await fetch(SCRIPT_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body: JSON.stringify({ action: 'getAllPayments' })
-            });
-            allPayments = await paymentsResponse.json();
-            
-            const trainersResponse = await fetch(SCRIPT_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body: JSON.stringify({ action: 'getAllTrainers' })
-            });
-            allTrainers = await trainersResponse.json();
-            
-            const bookingsResponse = await fetch(SCRIPT_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body: JSON.stringify({ action: 'getAllBookings' })
-            });
-            allBookings = await bookingsResponse.json();
-            
-            if (!allStudents || allStudents.length === 0) loadDemoStudents();
-            if (!allPayments || allPayments.length === 0) loadDemoPayments();
-            if (!allTrainers || allTrainers.length === 0) loadDemoTrainers();
-            if (!allBookings || allBookings.length === 0) loadDemoBookings();
+            allStudents = await apiCall('getAllStudents');
+            allPayments = await apiCall('getAllPayments');
+            allTrainers = await apiCall('getAllTrainers');
+            allBookings = await apiCall('getAllBookings');
             
             refreshFinancialReport();
             refreshStudentsReport();
@@ -733,59 +806,14 @@
             allTrainers.forEach(t => {
                 trainerFilter.innerHTML += `<option value="${t.id}">${t.name}</option>`;
             });
-        } catch(e) { console.error(e); loadDemoAll(); }
+        } catch(e) { 
+            console.error(e); 
+            // Error handled in apiCall
+        }
         showLoading(false);
     }
 
-    function loadDemoStudents() {
-        allStudents = [
-            {id: 1, code: "IT-1001", name: "يوسف أحمد", phone: "0101112223", school: "جامعة القاهرة", deptId: 1, groupId: 1, groupName: "FSW-01", createdAt: "2025-01-10"},
-            {id: 2, code: "IT-1002", name: "ليلى محمد", phone: "0101112224", school: "عين شمس", deptId: 1, groupId: 2, groupName: "FSW-02", createdAt: "2025-01-15"},
-            {id: 3, code: "LANG-2001", name: "عمر خالد", phone: "0101112225", school: "الجامعة الأمريكية", deptId: 2, groupId: 3, groupName: "ENG-01", createdAt: "2025-01-20"},
-            {id: 4, code: "BUS-3001", name: "سلمى هاني", phone: "0101112226", school: "جامعة القاهرة", deptId: 3, groupId: 4, groupName: "PMP-01", createdAt: "2025-01-05"},
-            {id: 5, code: "IT-1003", name: "مريم طارق", phone: "0101112227", school: "GUC", deptId: 1, groupId: 1, groupName: "FSW-01", createdAt: "2025-01-12"},
-        ];
-    }
 
-    function loadDemoPayments() {
-        allPayments = [
-            {id: 1, studentId: 1, studentName: "يوسف أحمد", levelNumber: 1, amountPaid: 500, totalFee: 500, remainingBalance: 0, paymentDate: "2025-01-10"},
-            {id: 2, studentId: 2, studentName: "ليلى محمد", levelNumber: 1, amountPaid: 300, totalFee: 500, remainingBalance: 200, paymentDate: "2025-01-15"},
-            {id: 3, studentId: 3, studentName: "عمر خالد", levelNumber: 1, amountPaid: 300, totalFee: 300, remainingBalance: 0, paymentDate: "2025-01-20"},
-            {id: 4, studentId: 4, studentName: "سلمى هاني", levelNumber: 1, amountPaid: 400, totalFee: 700, remainingBalance: 300, paymentDate: "2025-01-05"},
-            {id: 5, studentId: 5, studentName: "مريم طارق", levelNumber: 1, amountPaid: 250, totalFee: 500, remainingBalance: 250, paymentDate: "2025-01-12"},
-            {id: 6, studentId: 1, studentName: "يوسف أحمد", levelNumber: 2, amountPaid: 500, totalFee: 500, remainingBalance: 0, paymentDate: "2025-02-10"},
-        ];
-    }
-
-    function loadDemoTrainers() {
-        allTrainers = [
-            {id: 1, name: "د. محمد فتحي", deptId: 1, specialization: "Web Development"},
-            {id: 2, name: "م. علي زكي", deptId: 1, specialization: "Python"},
-            {id: 3, name: "أ. هند صبري", deptId: 2, specialization: "English"},
-            {id: 4, name: "د. نور كامل", deptId: 3, specialization: "Project Management"},
-        ];
-    }
-
-    function loadDemoBookings() {
-        allBookings = [
-            {id: 1, hallId: 1, trainerId: 1, groupId: 1, day: "Sunday", startTime: "10:00", endTime: "12:00"},
-            {id: 2, hallId: 2, trainerId: 2, groupId: 2, day: "Sunday", startTime: "13:00", endTime: "15:00"},
-            {id: 3, hallId: 3, trainerId: 3, groupId: 3, day: "Monday", startTime: "11:00", endTime: "13:00"},
-        ];
-    }
-
-    function loadDemoAll() {
-        loadDemoStudents();
-        loadDemoPayments();
-        loadDemoTrainers();
-        loadDemoBookings();
-        refreshFinancialReport();
-        refreshStudentsReport();
-        refreshPaymentsReport();
-        refreshAttendanceReport();
-        refreshOverdueReport();
-    }
 
     function refreshFinancialReport() {
         const fromDate = document.getElementById('financialFromDate').value;
@@ -953,21 +981,7 @@
         }).join('');
     }
 
-    async function exportToPDF(elementId, filename) {
-        showLoading(true);
-        const element = document.getElementById(elementId);
-        try {
-            const canvas = await html2canvas(element, { scale: 2, backgroundColor: '#ffffff' });
-            const { jsPDF } = window.jspdf;
-            const pdf = new jsPDF('p', 'mm', 'a4');
-            const imgData = canvas.toDataURL('image/png');
-            const imgWidth = 190;
-            const imgHeight = (canvas.height * imgWidth) / canvas.width;
-            pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
-            pdf.save(`${filename}_${new Date().toLocaleDateString('ar-EG')}.pdf`);
-        } catch(e) { console.error(e); alert('حدث خطأ أثناء التصدير'); }
-        showLoading(false);
-    }
+
 
     function showLoading(show) {
         const overlay = document.getElementById('loadingOverlay');
