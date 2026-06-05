@@ -494,13 +494,13 @@
             
             try {
                 // Call Google Apps Script function
-                const result = await google.script.run.withSuccessHandler(function(response) {
-                    handleLoginResponse(response);
-                }).withFailureHandler(function(error) {
-                    console.error('Script error:', error);
-                    showError('حدث خطأ في الاتصال. الرجاء المحاولة مرة أخرى.');
-                    resetLoginButton();
-                }).verifyLogin(username, password);
+                const response = await fetch('https://script.google.com/macros/s/AKfycbxOlbPXo97sbdQA9tny8aRZpx64jxNzZ4_NcHwmXVFnyw_7giNmavJcWaf84oW5KCDgpQ/exec', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'verifyLogin', username: username, password: password })
+});
+const result = await response.json();
+handleLoginResponse(result);
                 
                 // Note: The actual response handling happens in withSuccessHandler
                 // If the function returns directly (synchronous), handle it here
