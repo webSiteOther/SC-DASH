@@ -645,7 +645,7 @@
             link.addEventListener('click', function(e) {
                 e.preventDefault();
                 const page = this.dataset.page;
-                if (page) window.location.href = window.location.href.split('?')[0] + '?page=' + page;
+                if (page) window.location.href = page + '.html';
             });
         });
         
@@ -666,28 +666,28 @@
         try {
             const bookingsResponse = await fetch(SCRIPT_URL, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                 body: JSON.stringify({ action: 'getAllBookings' })
             });
             allBookings = await bookingsResponse.json();
             
             const hallsResponse = await fetch(SCRIPT_URL, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                 body: JSON.stringify({ action: 'getAllHalls' })
             });
             allHalls = await hallsResponse.json();
             
             const trainersResponse = await fetch(SCRIPT_URL, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                 body: JSON.stringify({ action: 'getAllTrainers' })
             });
             allTrainers = await trainersResponse.json();
             
             const groupsResponse = await fetch(SCRIPT_URL, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                 body: JSON.stringify({ action: 'getAllGroups' })
             });
             allGroups = await groupsResponse.json();
@@ -936,7 +936,7 @@
         try {
             const response = await fetch(SCRIPT_URL, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                 body: JSON.stringify({ action: 'saveBooking', data: bookingData })
             });
             const result = await response.json();
@@ -955,7 +955,7 @@
             try {
                 const response = await fetch(SCRIPT_URL, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                     body: JSON.stringify({ action: 'deleteBooking', id: id })
                 });
                 const result = await response.json();
