@@ -618,7 +618,7 @@
 
     document.addEventListener('DOMContentLoaded', function() {
         const userStr = sessionStorage.getItem('loggedInUser');
-        if (!userStr) { window.location.href = window.location.href.split('?')[0]; return; }
+        if (!userStr) { window.location.href = 'index.html'; return; }
         currentUser = JSON.parse(userStr);
         updateUserUI();
         setupEventListeners();
@@ -639,7 +639,7 @@
 
     function setupEventListeners() {
         document.getElementById('menuToggle').addEventListener('click', () => document.getElementById('sidebar').classList.toggle('open'));
-        document.getElementById('logoutBtn').addEventListener('click', () => { sessionStorage.removeItem('loggedInUser'); window.location.href = window.location.href.split('?')[0]; });
+        document.getElementById('logoutBtn').addEventListener('click', () => { sessionStorage.removeItem('loggedInUser'); window.location.href = 'index.html'; });
         
         document.querySelectorAll('.nav-link').forEach(link => {
             link.addEventListener('click', function(e) {
