@@ -777,63 +777,61 @@
         </header>
 
         <div class="content-area">
-            <!-- Tabs -->
-            <div class="report-tabs" style="display: flex; gap: 10px; margin-bottom: 20px; background: white; padding: 10px; border-radius: 16px;">
-                <button class="tab-btn active" id="tabCourses" style="padding: 10px 20px; border: none; background: var(--primary-blue); color: white; border-radius: 10px; cursor: pointer; font-weight: bold;"><i class="fas fa-book"></i> الكورسات</button>
-                <button class="tab-btn" id="tabAddOns" style="padding: 10px 20px; border: none; background: transparent; color: var(--dark); border-radius: 10px; cursor: pointer; font-weight: bold;"><i class="fas fa-plus-circle"></i> الإضافات (AddOns)</button>
-            </div>
-
             <!-- Toolbar -->
-            <div class="toolbar">
+            <div class="toolbar" style="margin-bottom: 25px;">
                 <div class="search-box">
-                    <input type="text" id="searchInput" placeholder="بحث...">
+                    <input type="text" id="searchInput" placeholder="بحث باسم الكورس أو الإضافة...">
                     <button id="searchBtn"><i class="fas fa-search"></i> بحث</button>
                 </div>
-                <button class="btn-add" id="addBtn">
-                    <i class="fas fa-plus"></i>
-                    <span id="addBtnText">إضافة كورس جديد</span>
-                </button>
             </div>
 
-            <!-- Courses Table -->
-            <div class="users-table-container" id="coursesSection">
-                <table class="users-table">
+            <!-- Courses Section -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 style="color: var(--dark-blue); margin: 0;"><i class="fas fa-book"></i> الكورسات الأساسية</h3>
+                <button class="btn-add" id="addBtn" style="padding: 10px 20px; background: var(--success); color: white; border: none; border-radius: 12px; cursor: pointer; font-weight: bold;"><i class="fas fa-plus"></i> إضافة كورس</button>
+            </div>
+            
+            <div class="users-table-container" id="coursesSection" style="margin-bottom: 40px; background: white; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); overflow-x: auto;">
+                <table class="users-table" style="width: 100%; border-collapse: collapse;">
                     <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>اسم الكورس</th>
-                            <th>القسم</th>
-                            <th>سعر المستوى (ج.م)</th>
-                            <th>عدد المستويات</th>
-                            <th>الإجراءات</th>
+                        <tr style="background: var(--dark-blue); color: white;">
+                            <th style="padding: 15px; text-align: right;">ID</th>
+                            <th style="padding: 15px; text-align: right;">اسم الكورس</th>
+                            <th style="padding: 15px; text-align: right;">القسم</th>
+                            <th style="padding: 15px; text-align: right;">سعر المستوى (ج.م)</th>
+                            <th style="padding: 15px; text-align: right;">عدد المستويات</th>
+                            <th style="padding: 15px; text-align: center;">الإجراءات</th>
                         </tr>
                     </thead>
                     <tbody id="coursesTableBody">
-                        <tr><td colspan="6" style="text-align: center;">جاري التحميل...</td></tr>
+                        <tr><td colspan="6" style="text-align: center; padding: 20px;">جاري التحميل...</td></tr>
                     </tbody>
                 </table>
             </div>
 
-            <!-- AddOns Table -->
-            <div class="users-table-container" id="addonsSection" style="display: none;">
-                <table class="users-table">
+            <!-- AddOns Section -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 style="color: var(--dark-blue); margin: 0;"><i class="fas fa-plus-circle"></i> الملحقات والإضافات (AddOns)</h3>
+                <button class="btn-add" id="addAddonBtn" style="padding: 10px 20px; background: var(--info); color: white; border: none; border-radius: 12px; cursor: pointer; font-weight: bold;"><i class="fas fa-plus"></i> إضافة ملحق</button>
+            </div>
+
+            <div class="users-table-container" id="addonsSection" style="margin-bottom: 20px; background: white; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); overflow-x: auto;">
+                <table class="users-table" style="width: 100%; border-collapse: collapse;">
                     <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>اسم الإضافة</th>
-                            <th>سعر الإضافة (ج.م)</th>
-                            <th>الكورس المرتبط</th>
-                            <th>الإجراءات</th>
+                        <tr style="background: var(--dark-blue); color: white;">
+                            <th style="padding: 15px; text-align: right;">ID</th>
+                            <th style="padding: 15px; text-align: right;">اسم الإضافة</th>
+                            <th style="padding: 15px; text-align: right;">السعر (ج.م)</th>
+                            <th style="padding: 15px; text-align: right;">الكورس المرتبط</th>
+                            <th style="padding: 15px; text-align: center;">الإجراءات</th>
                         </tr>
                     </thead>
                     <tbody id="addonsTableBody">
-                        <tr><td colspan="5" style="text-align: center;">جاري التحميل...</td></tr>
+                        <tr><td colspan="5" style="text-align: center; padding: 20px;">جاري التحميل...</td></tr>
                     </tbody>
                 </table>
             </div>
 
-            <!-- Pagination -->
-            <div class="pagination" id="pagination"></div>
         </div>
     </main>
 </div>
@@ -976,16 +974,11 @@
     });
 
     function setupEvents() {
-        document.getElementById('tabCourses').addEventListener('click', () => switchTab('courses'));
-        document.getElementById('tabAddOns').addEventListener('click', () => switchTab('addons'));
-        
         document.getElementById('searchBtn').addEventListener('click', () => filterAndRender());
         document.getElementById('searchInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') filterAndRender(); });
         
-        document.getElementById('addBtn').addEventListener('click', () => {
-            if(currentTab === 'courses') openCourseModal();
-            else openAddonModal();
-        });
+        document.getElementById('addBtn').addEventListener('click', () => openCourseModal());
+        document.getElementById('addAddonBtn').addEventListener('click', () => openAddonModal());
         
         document.getElementById('closeCourseModal').addEventListener('click', () => closeModals());
         document.getElementById('cancelCourseModal').addEventListener('click', () => closeModals());
@@ -995,8 +988,7 @@
         document.getElementById('cancelAddonModal').addEventListener('click', () => closeModals());
         document.getElementById('saveAddonBtn').addEventListener('click', () => saveAddon());
     }
-
-    function switchTab(tab) {
+function switchTab(tab) {
         currentTab = tab;
         document.getElementById('tabCourses').style.background = tab === 'courses' ? 'var(--primary-blue)' : 'transparent';
         document.getElementById('tabCourses').style.color = tab === 'courses' ? 'white' : 'var(--dark)';
@@ -1042,16 +1034,13 @@
     function filterAndRender() {
         const searchTerm = document.getElementById('searchInput').value.toLowerCase();
         
-        if (currentTab === 'courses') {
-            let filtered = allCourses.filter(s => (s.name && s.name.toLowerCase().includes(searchTerm)) || (s.deptName && s.deptName.toLowerCase().includes(searchTerm)));
-            renderCourses(filtered);
-        } else {
-            let filtered = allAddOns.filter(s => s.name && s.name.toLowerCase().includes(searchTerm));
-            renderAddons(filtered);
-        }
+        let filteredCourses = allCourses.filter(s => (s.name && s.name.toLowerCase().includes(searchTerm)) || (s.deptName && s.deptName.toLowerCase().includes(searchTerm)));
+        renderCourses(filteredCourses);
+        
+        let filteredAddons = allAddOns.filter(s => s.name && s.name.toLowerCase().includes(searchTerm));
+        renderAddons(filteredAddons);
     }
-    
-    function renderCourses(data) {
+function renderCourses(data) {
         const tbody = document.getElementById('coursesTableBody');
         if (!data || data.length === 0) {
             tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">لا توجد بيانات</td></tr>';
